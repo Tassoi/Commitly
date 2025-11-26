@@ -1,0 +1,5 @@
+dist
+node_modules
+src-tauri
+*.log
+.DS_Store

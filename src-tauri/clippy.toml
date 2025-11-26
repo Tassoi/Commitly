@@ -1,0 +1,23 @@
+# Clippy configuration for GitLog AI Reporter
+# See: https://doc.rust-lang.org/clippy/
+
+# Deny warnings in CI
+warn-lints-in-doc-comments = true
+
+# Allowed lints
+allow-lints = []
+
+# Denied lints - make these errors
+deny-lints = [
+    "clippy::unwrap_used",
+    "clippy::expect_used",
+    "clippy::panic",
+    "clippy::todo",
+]
+
+# Warning lints
+warn-lints = [
+    "clippy::all",
+    "clippy::pedantic",
+    "clippy::nursery",
+]
