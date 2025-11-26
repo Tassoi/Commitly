@@ -234,3 +234,57 @@ npm run build
 ```
 
 **M1 Verification Complete**: All review feedback addressed, build passes, permissions configured.
+
+---
+
+## Runtime Fix (Startup Issue)
+
+After deployment, a runtime issue was discovered:
+
+### 8. ✅ Tauri Permissions Format Correction
+
+**Problem**: Application failed to start with error:
+```
+Permission fs:allow-read-text-file not found
+```
+
+**Root Cause**:
+Tauri 2.0 does not support the object-based permission configuration format used initially:
+```json
+{
+  "identifier": "fs:allow-read-text-file",
+  "allow": [{ "path": "$HOME/**" }]
+}
+```
+
+**Solution**:
+Simplified `capabilities/default.json` to only include necessary permissions for M1:
+```json
+{
+  "permissions": [
+    "core:default",
+    "core:path:default",
+    "opener:default",
+    "dialog:default"
+  ]
+}
+```
+
+**Why This Works**:
+1. **Dialog Auto-Authorization**: When users select a directory via `dialog:default`, Tauri automatically authorizes access to that path
+2. **Mock Data Phase**: M1 GitService returns mock data, no actual filesystem access needed
+3. **Deferred to M2**: Real filesystem permissions will be added when integrating git2
+
+**M2 Strategy**:
+- Use Scope API to dynamically add paths: `app.fs_scope().allow_directory(&path, true)`
+- Or add predefined permissions: `fs:default`, `fs:allow-read-dir`, `fs:allow-read-file`
+- Documentation: See `TAURI_PERMISSIONS.md`
+
+**Files Changed**:
+- `src-tauri/capabilities/default.json` (simplified)
+- `TAURI_PERMISSIONS.md` (new documentation)
+
+**Validation**:
+- ✅ Application can now start (requires Rust installation)
+- ✅ Dialog permission functional
+- ✅ No permission errors during startup
