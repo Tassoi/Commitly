@@ -4,7 +4,16 @@ A desktop application built with Tauri (Rust backend) + React (TypeScript fronte
 
 ## Status
 
-🚧 **In Development** - M1 (Project Skeleton) completed
+✅ **M1 (Project Skeleton) - Completed and Reviewed**
+
+All M1 review feedback has been addressed:
+- ✅ Rust-TypeScript data model alignment with serde rename
+- ✅ All commands have minimal mock implementations
+- ✅ Frontend skeleton fully wired (Zustand + hooks + components)
+- ✅ Tauri permissions and dialog plugin configured
+- ✅ Dependencies aligned (Zustand, Tailwind, lazy_static)
+
+See [M1_REVIEW_FIXES.md](M1_REVIEW_FIXES.md) for details.
 
 ## Prerequisites
 
