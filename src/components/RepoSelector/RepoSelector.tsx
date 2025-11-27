@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useGitRepo } from '../../hooks/useGitRepo';
 import { useRepoStore } from '../../store';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const RepoSelector = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { selectRepository, openRepository, getCommits } = useGitRepo();
-  const { repoInfo, setRepoInfo, setCommits } = useRepoStore();
+  const { repoInfo, setRepoInfo, setCommits, addRepoToHistory } = useRepoStore();
 
   const handleSelectRepo = async () => {
     try {
@@ -19,6 +21,9 @@ const RepoSelector = () => {
 
       const info = await openRepository(path);
       setRepoInfo(info);
+
+      // Add to history and get repo ID
+      addRepoToHistory(info);
 
       // Load initial commits (last 30 days)
       const now = Date.now();
@@ -37,26 +42,21 @@ const RepoSelector = () => {
   };
 
   return (
-    <div className="repo-selector p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-      <h2 className="text-xl font-bold mb-4">Select Git Repository</h2>
+    <div className="flex flex-wrap items-center gap-4">
+      <Button onClick={handleSelectRepo} disabled={isLoading}>
+        {isLoading ? 'Loading...' : 'Open Repository'}
+      </Button>
 
-      <button
-        onClick={handleSelectRepo}
-        disabled={isLoading}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-      >
-        {isLoading ? 'Loading...' : 'Browse...'}
-      </button>
-
-      {error && <p className="mt-2 text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {repoInfo && (
-        <div className="mt-4 p-3 bg-white dark:bg-gray-700 rounded">
-          <p className="font-semibold">{repoInfo.name}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{repoInfo.path}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Branch: {repoInfo.branch} | Commits: {repoInfo.totalCommits}
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-sm font-medium">{repoInfo.name}</p>
+            <p className="max-w-[300px] truncate text-xs text-muted-foreground">{repoInfo.path}</p>
+          </div>
+          <Badge variant="secondary">{repoInfo.branch}</Badge>
+          <Badge variant="outline">{repoInfo.totalCommits} commits</Badge>
         </div>
       )}
     </div>

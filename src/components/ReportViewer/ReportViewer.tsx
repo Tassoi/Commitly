@@ -1,9 +1,16 @@
 import { useReportStore, useRepoStore } from '../../store';
 import { useReportGen } from '../../hooks/useReportGen';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { FileText, Calendar } from 'lucide-react';
+import type { Report } from '../../types';
 
 const ReportViewer = () => {
   const { currentReport, isGenerating, setReport, setGenerating } = useReportStore();
-  const { commits, selectedCommits } = useRepoStore();
+  const { commits, selectedCommits, currentRepoId } = useRepoStore();
   const { generateWeeklyReport, generateMonthlyReport } = useReportGen();
 
   const handleGenerateWeekly = async () => {
@@ -13,7 +20,17 @@ const ReportViewer = () => {
       const report = await generateWeeklyReport(
         selectedCommitObjects.length > 0 ? selectedCommitObjects : commits
       );
-      setReport(report);
+
+      // Enrich report with metadata
+      const enrichedReport: Report = {
+        ...report,
+        id: report.id || crypto.randomUUID(),
+        name: `Weekly Report - ${new Date().toLocaleDateString()}`,
+        lastModified: Math.floor(Date.now() / 1000),
+        repoIds: currentRepoId ? [currentRepoId] : [],
+      };
+
+      setReport(enrichedReport);
     } catch (err) {
       console.error('Failed to generate weekly report:', err);
     } finally {
@@ -28,7 +45,17 @@ const ReportViewer = () => {
       const report = await generateMonthlyReport(
         selectedCommitObjects.length > 0 ? selectedCommitObjects : commits
       );
-      setReport(report);
+
+      // Enrich report with metadata
+      const enrichedReport: Report = {
+        ...report,
+        id: report.id || crypto.randomUUID(),
+        name: `Monthly Report - ${new Date().toLocaleDateString()}`,
+        lastModified: Math.floor(Date.now() / 1000),
+        repoIds: currentRepoId ? [currentRepoId] : [],
+      };
+
+      setReport(enrichedReport);
     } catch (err) {
       console.error('Failed to generate monthly report:', err);
     } finally {
@@ -37,47 +64,78 @@ const ReportViewer = () => {
   };
 
   return (
-    <div className="report-viewer p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-      <h2 className="text-xl font-bold mb-4">Report Preview</h2>
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={handleGenerateWeekly}
-          disabled={isGenerating || commits.length === 0}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-        >
-          {isGenerating ? 'Generating...' : 'Generate Weekly Report'}
-        </button>
-        <button
-          onClick={handleGenerateMonthly}
-          disabled={isGenerating || commits.length === 0}
-          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400"
-        >
-          {isGenerating ? 'Generating...' : 'Generate Monthly Report'}
-        </button>
-      </div>
-
-      {isGenerating && <p className="text-gray-600">Generating report...</p>}
-
-      {currentReport && !isGenerating && (
-        <div className="bg-white dark:bg-gray-700 rounded p-4">
-          <div className="mb-2 flex justify-between items-center">
-            <h3 className="text-lg font-semibold uppercase">{currentReport.type} Report</h3>
-            <span className="text-sm text-gray-500">
-              {new Date(currentReport.generatedAt * 1000).toLocaleString()}
-            </span>
-          </div>
-          <div className="prose dark:prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap bg-gray-100 dark:bg-gray-800 p-4 rounded">
-              {currentReport.content}
-            </pre>
-          </div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            Based on {currentReport.commits.length} commit(s)
-          </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Report Preview</CardTitle>
+        <CardDescription>Generate and preview commit reports</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Button
+            onClick={handleGenerateWeekly}
+            disabled={isGenerating || commits.length === 0}
+            variant="default"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Generate Weekly Report'}
+          </Button>
+          <Button
+            onClick={handleGenerateMonthly}
+            disabled={isGenerating || commits.length === 0}
+            variant="secondary"
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Generate Monthly Report'}
+          </Button>
         </div>
-      )}
-    </div>
+
+        {isGenerating && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm">Generating report...</p>
+          </div>
+        )}
+
+        {currentReport && !isGenerating && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">{currentReport.type.toUpperCase()}</Badge>
+                    <CardTitle className="text-lg">{currentReport.name}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Based on {currentReport.commits.length} commit(s)
+                  </CardDescription>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(currentReport.generatedAt * 1000).toLocaleString()}
+                </p>
+              </div>
+            </CardHeader>
+            <Separator />
+            <CardContent className="pt-6">
+              <ScrollArea className="h-96 w-full rounded-md border p-4">
+                <pre className="whitespace-pre-wrap text-sm font-mono">
+                  {currentReport.content}
+                </pre>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
+
+        {!currentReport && !isGenerating && commits.length === 0 && (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                No commits available. Select a repository to generate reports.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

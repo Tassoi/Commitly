@@ -30,8 +30,8 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 lazy_static = "1.4"
 
-# Git dependencies (to be added when Rust is installed)
-# git2 = "0.18"
+# Git dependencies
+git2 = { version = "0.18", features = ["vendored-libgit2"] }
 
 # HTTP client (to be added when needed)
 # reqwest = { version = "0.11", features = ["json"] }

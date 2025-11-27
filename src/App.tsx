@@ -1,3 +1,4 @@
+import { Sidebar } from './components/Sidebar';
 import RepoSelector from './components/RepoSelector';
 import CommitList from './components/CommitList';
 import ReportViewer from './components/ReportViewer';
@@ -7,26 +8,47 @@ function App() {
   const { commits } = useRepoStore();
 
   return (
-    <div className="container mx-auto p-4">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-center">GitLog AI Reporter</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-2">
-          Generate AI-powered reports from your Git commit history
-        </p>
-      </header>
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar />
 
-      <div className="grid grid-cols-1 gap-6">
-        <RepoSelector />
+      {/* Main Content */}
+      <main className="flex flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header className="border-b bg-background px-6 py-4">
+          <h1 className="text-2xl font-bold">GitLog AI Reporter</h1>
+          <p className="text-sm text-muted-foreground">
+            Generate AI-powered reports from your Git commit history
+          </p>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <CommitList commits={commits} />
-          <ReportViewer />
+        {/* RepoSelector Bar */}
+        <div className="border-b bg-background px-6 py-3">
+          <RepoSelector />
         </div>
-      </div>
 
-      <footer className="mt-8 text-center text-sm text-gray-500">
-        <p>M1 Skeleton - Mock data in use</p>
-      </footer>
+        {/* Workspace: Split Layout */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left: CommitList */}
+          <div className="flex-1 overflow-hidden border-r">
+            <div className="h-full overflow-y-auto p-6">
+              <CommitList commits={commits} />
+            </div>
+          </div>
+
+          {/* Right: ReportViewer */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto p-6">
+              <ReportViewer />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t bg-background px-6 py-2 text-center">
+          <p className="text-xs text-muted-foreground">M2 Complete</p>
+        </footer>
+      </main>
     </div>
   );
 }
