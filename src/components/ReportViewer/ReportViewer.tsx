@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useReportStore, useRepoStore } from '../../store';
-import { useReportGen } from '../../hooks/useReportGen';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,6 @@ let globalListener: UnlistenFn | null = null;
 const ReportViewer = () => {
   const { currentReport, isGenerating, setReport, setGenerating } = useReportStore();
   const { commits, selectedCommits, currentRepoId } = useRepoStore();
-  const { generateWeeklyReport, generateMonthlyReport } = useReportGen();
 
   // Streaming state for real-time progress display
   const [streamingContent, setStreamingContent] = useState<string>('');
@@ -55,17 +54,15 @@ const ReportViewer = () => {
 
   const handleGenerateWeekly = async () => {
     try {
-      console.log('开始生成周报...');
       setGenerating(true);
       setStreamingContent(''); // Clear previous streaming content
       const selectedCommitObjects = commits.filter((c) => selectedCommits.includes(c.hash));
       const commitsToUse = selectedCommitObjects.length > 0 ? selectedCommitObjects : commits;
 
-      console.log('提交数量:', commitsToUse.length);
-      console.log('提交数据:', commitsToUse);
-
-      const report = await generateWeeklyReport(commitsToUse);
-      console.log('报告生成成功:', report);
+      const report = await invoke<Report>('generate_weekly_report', {
+        commits: commitsToUse,
+        templateId: null, // Use default template
+      });
 
       // Enrich report with metadata
       const enrichedReport: Report = {
@@ -90,9 +87,12 @@ const ReportViewer = () => {
       setGenerating(true);
       setStreamingContent(''); // Clear previous streaming content
       const selectedCommitObjects = commits.filter((c) => selectedCommits.includes(c.hash));
-      const report = await generateMonthlyReport(
-        selectedCommitObjects.length > 0 ? selectedCommitObjects : commits
-      );
+      const commitsToUse = selectedCommitObjects.length > 0 ? selectedCommitObjects : commits;
+
+      const report = await invoke<Report>('generate_monthly_report', {
+        commits: commitsToUse,
+        templateId: null, // Use default template
+      });
 
       // Enrich report with metadata
       const enrichedReport: Report = {
@@ -105,7 +105,8 @@ const ReportViewer = () => {
 
       setReport(enrichedReport);
     } catch (err) {
-      console.error('Failed to generate monthly report:', err);
+      console.error('生成月报失败:', err);
+      toast.error(`生成月报失败: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setGenerating(false);
     }
@@ -225,19 +226,8 @@ const ReportViewer = () => {
                     <Download className="mr-2 h-4 w-4" />
                     HTML
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleExport('pdf')}
-                    title="导出为 PDF"
-                    disabled
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    PDF
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(currentReport.generatedAt * 1000).toLocaleString()}
-                  </p>
+        
+             
                 </div>
               </div>
             </CardHeader>

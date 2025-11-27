@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Edit, Trash2, Copy, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, FileText, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ReportTemplate } from '../../types';
 
@@ -146,6 +146,18 @@ const TemplateManagement = () => {
     setIsCreating(false);
   };
 
+  const handleSetDefault = async (template: ReportTemplate) => {
+    try {
+      await invoke('set_default_template', { id: template.id });
+      toast.success(`已将 "${template.name}" 设置为默认模板`);
+      // Reload templates to update the isDefault flag
+      await loadTemplates();
+    } catch (err) {
+      console.error('Failed to set default template:', err);
+      toast.error(`设置失败: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const getTemplateTypeLabel = (type: string) => {
     switch (type) {
       case 'weekly':
@@ -194,7 +206,7 @@ const TemplateManagement = () => {
                     }`}
                     onClick={() => handleSelectTemplate(template)}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
@@ -209,8 +221,28 @@ const TemplateManagement = () => {
                               内置
                             </Badge>
                           )}
+                          {template.isDefault && (
+                            <Badge variant="default" className="text-xs flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-current" />
+                              默认
+                            </Badge>
+                          )}
                         </div>
                       </div>
+                      {!template.isDefault && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetDefault(template);
+                          }}
+                          title="设为默认模板"
+                        >
+                          <Star className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </button>
                 ))}

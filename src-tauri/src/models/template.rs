@@ -19,6 +19,8 @@ pub struct ReportTemplate {
     pub content: String, // Handlebars template content
     #[serde(rename = "isBuiltin")]
     pub is_builtin: bool, // Built-in templates cannot be deleted
+    #[serde(rename = "isDefault", default)]
+    pub is_default: bool, // Default template for its type
     #[serde(rename = "createdAt")]
     pub created_at: i64,
     #[serde(rename = "updatedAt")]
@@ -35,6 +37,7 @@ impl ReportTemplate {
             template_type: TemplateType::Custom,
             content,
             is_builtin: false,
+            is_default: false,
             created_at: now,
             updated_at: now,
         }
@@ -49,6 +52,7 @@ impl ReportTemplate {
             template_type,
             content,
             is_builtin: true,
+            is_default: true, // Built-in templates are default by default
             created_at: now,
             updated_at: now,
         }

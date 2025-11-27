@@ -7,6 +7,7 @@ import FilterToolbar from './components/FilterToolbar';
 import Settings from './components/Settings';
 import { useRepoStore } from './store';
 import { useGitRepo } from './hooks/useGitRepo';
+import { useTheme } from './hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -19,6 +20,9 @@ import {
 } from 'lucide-react';
 
 function App() {
+  // Initialize theme - ensures theme changes and system theme monitoring work
+  useTheme();
+
   const { commits, repoInfo, setRepoInfo, setCommits, addRepoToHistory } = useRepoStore();
   const { selectRepository, openRepository, getCommits } = useGitRepo();
 
@@ -163,11 +167,7 @@ function App() {
             {/* Right: Illustration Placeholder */}
             <div className="hidden rounded-2xl bg-white/10 p-4 shadow-lg backdrop-blur dark:bg-white/5 lg:block">
               <div className="flex h-48 flex-col items-center justify-center gap-2 text-primary-foreground/60">
-                <FileText className="h-16 w-16 opacity-40" />
-                <p className="text-center text-sm">Hero 插画占位符</p>
-                <p className="text-center text-xs opacity-75">
-                  建议尺寸：400x300px
-                </p>
+                <img src="/logo_large.png" alt="GitLog AI Reporter" className="h-24 w-24" />
               </div>
             </div>
           </section>

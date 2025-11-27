@@ -2,13 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tauri + React + Typescript</title>
   </head>
 
   <body>
     <div id="root"></div>
+    <script>
+      // Apply theme immediately to prevent flash
+      (function() {
+        const THEME_STORAGE_KEY = 'gitlog-theme';
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        const theme = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const resolvedTheme = theme === 'system' ? systemTheme : theme;
+
+        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.add(resolvedTheme);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

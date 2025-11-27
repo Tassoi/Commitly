@@ -1,7 +1,7 @@
 // Report service - orchestrates report generation with Handlebars templates
 
-use crate::models::{Commit, Report, ReportType};
-use crate::services::llm_service::LLMService;
+use crate::models::{Commit, Report, ReportType, TemplateType};
+use crate::services::{llm_service::LLMService, template_service::TemplateService};
 use handlebars::Handlebars;
 use serde_json::json;
 use std::collections::HashSet;
@@ -35,18 +35,26 @@ impl ReportService {
     pub async fn generate_weekly(
         &self,
         commits: Vec<Commit>,
+        template_id: Option<String>,
         app: AppHandle,
     ) -> Result<Report, String> {
-   
-
         if commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
         }
 
+        // Limit commit count 
+        const MAX_COMMITS: usize = 50;
+        let commits = if commits.len() > MAX_COMMITS {
+            println!("⚠️  提交数量过多 ({})，仅使用最近的 {} 个提交", commits.len(), MAX_COMMITS);
+            commits.into_iter().take(MAX_COMMITS).collect()
+        } else {
+            commits
+        };
+
         let stats = self.calculate_stats(&commits);
         let context = json!({
             "commits": commits.iter().map(|c| json!({
-                "hash": &c.hash[..7.min(c.hash.len())], // 短哈希
+                "hash": &c.hash[..7.min(c.hash.len())],
                 "message": &c.message,
                 "author": &c.author,
                 "timestamp": format_timestamp(c.timestamp),
@@ -61,19 +69,26 @@ impl ReportService {
             "files_changed": stats.total_files_changed,
         });
 
+        // Get template content
+        let template_content = if let Some(tid) = template_id {
+            let template = TemplateService::get_template(&app, &tid)?;
+            template.content
+        } else {
+            // Use default weekly template
+            let default_template = TemplateService::get_default_template(&app, TemplateType::Weekly)?;
+            default_template.content
+        };
 
+        // Render template
         let prompt = self
             .handlebars
-            .render("weekly", &context)
+            .render_template(&template_content, &context)
             .map_err(|e| format!("Template rendering error: {}", e))?;
-
 
         let content = self
             .llm_service
             .generate_report_streaming(prompt, app)
             .await?;
-
-   
 
         Ok(Report {
             id: uuid::Uuid::new_v4().to_string(),
@@ -88,16 +103,14 @@ impl ReportService {
     pub async fn generate_monthly(
         &self,
         commits: Vec<Commit>,
+        template_id: Option<String>,
         app: AppHandle,
     ) -> Result<Report, String> {
-        println!("📊 开始生成月报...");
-        println!("提交数量: {}", commits.len());
-
         if commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
         }
 
-        // 限制提交数量，避免 prompt 过长
+        // Limit commit count
         const MAX_COMMITS: usize = 100;
         let commits = if commits.len() > MAX_COMMITS {
             println!("⚠️  提交数量过多 ({})，仅使用最近的 {} 个提交", commits.len(), MAX_COMMITS);
@@ -107,8 +120,6 @@ impl ReportService {
         };
 
         let stats = self.calculate_stats(&commits);
-
-        // Group commits by week
         let commits_by_week = self.group_commits_by_week(&commits);
 
         let context = json!({
@@ -129,9 +140,20 @@ impl ReportService {
             "weeks_count": commits_by_week.len(),
         });
 
+        // Get template content
+        let template_content = if let Some(tid) = template_id {
+            let template = TemplateService::get_template(&app, &tid)?;
+            template.content
+        } else {
+            // Use default monthly template
+            let default_template = TemplateService::get_default_template(&app, TemplateType::Monthly)?;
+            default_template.content
+        };
+
+        // Render template
         let prompt = self
             .handlebars
-            .render("monthly", &context)
+            .render_template(&template_content, &context)
             .map_err(|e| format!("Template rendering error: {}", e))?;
 
         let content = self

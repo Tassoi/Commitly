@@ -8,6 +8,7 @@ use tauri::AppHandle;
 #[tauri::command]
 pub async fn generate_weekly_report(
     commits: Vec<Commit>,
+    template_id: Option<String>,
     app: AppHandle,
 ) -> Result<Report, String> {
     // Load configuration
@@ -18,12 +19,13 @@ pub async fn generate_weekly_report(
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming
-    report_service.generate_weekly(commits, app).await
+    report_service.generate_weekly(commits, template_id, app).await
 }
 
 #[tauri::command]
 pub async fn generate_monthly_report(
     commits: Vec<Commit>,
+    template_id: Option<String>,
     app: AppHandle,
 ) -> Result<Report, String> {
     // Load configuration
@@ -34,7 +36,7 @@ pub async fn generate_monthly_report(
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming
-    report_service.generate_monthly(commits, app).await
+    report_service.generate_monthly(commits, template_id, app).await
 }
 
 // Note: export_report command moved to commands/export.rs for M4 implementation

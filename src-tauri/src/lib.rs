@@ -41,6 +41,8 @@ pub fn run() {
             template::create_template,
             template::update_template,
             template::delete_template,
+            template::set_default_template,
+            template::get_default_template,
             // Config commands
             config::save_config,
             config::load_config,

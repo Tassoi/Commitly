@@ -23,11 +23,7 @@ pub async fn export_report(
             ExportService::export_html(&report, &save_path)?;
             Ok(format!("成功导出 HTML 文件到: {}", save_path))
         }
-        "pdf" => {
-            ExportService::export_pdf(&report, &save_path)?;
-            Ok(format!("成功导出 PDF 文件到: {}", save_path))
-        }
-        _ => Err(format!("不支持的导出格式: {}", format)),
+        _ => Err(format!("不支持的导出格式: {}（支持的格式：markdown, html）", format)),
     }
 }
 
@@ -45,7 +41,6 @@ pub async fn get_save_path(
     let extension = match format.as_str() {
         "markdown" => "md",
         "html" => "html",
-        "pdf" => "pdf",
         _ => return Err(format!("Invalid format: {}", format)),
     };
 
@@ -53,7 +48,6 @@ pub async fn get_save_path(
     let filter_name = match format.as_str() {
         "markdown" => "Markdown 文件",
         "html" => "HTML 文件",
-        "pdf" => "PDF 文件",
         _ => "文件",
     };
 

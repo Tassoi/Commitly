@@ -117,6 +117,7 @@ export interface ReportTemplate {
   type: TemplateType;
   content: string; // Handlebars template content
   isBuiltin: boolean; // Built-in templates cannot be deleted
+  isDefault: boolean; // Default template for its type
   createdAt: number;
   updatedAt: number;
 }

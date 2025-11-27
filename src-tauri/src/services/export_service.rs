@@ -93,11 +93,6 @@ impl ExportService {
         Ok(())
     }
 
-    /// Exports report as PDF file (placeholder for M4.4)
-    pub fn export_pdf(report: &Report, save_path: &str) -> Result<(), String> {
-        // TODO: M4.4 - Implement PDF export
-        Err("PDF export not yet implemented".to_string())
-    }
 }
 
 /// Formats Unix timestamp to human-readable date
@@ -346,13 +341,13 @@ fn build_html_document(report: &Report, html_content: &str) -> String {
     </div>
 </body>
 </html>"#,
-        report_type_to_chinese(&report.report_type),
-        format_timestamp(report.generated_at),
-        report_type_to_chinese(&report.report_type).to_uppercase(),
-        report_type_to_chinese(&report.report_type),
-        format_timestamp(report.generated_at),
-        report.commits.len(),
-        report.id,
-        html_content
+        report_type_to_chinese(&report.report_type),           // title 第1个
+        format_timestamp(report.generated_at),                // title 第2个
+        report_type_to_chinese(&report.report_type),           // badge
+        report_type_to_chinese(&report.report_type),           // h1
+        format_timestamp(report.generated_at),                // metadata 生成时间
+        report.commits.len(),                                 // metadata 提交数量
+        report.id,                                            // metadata 报告ID
+        html_content                                          // content
     )
 }

@@ -1,6 +1,6 @@
 // Template management Tauri commands
 
-use crate::models::ReportTemplate;
+use crate::models::{ReportTemplate, TemplateType};
 use crate::services::TemplateService;
 use tauri::AppHandle;
 
@@ -36,4 +36,17 @@ pub async fn update_template(
 #[tauri::command]
 pub async fn delete_template(app: AppHandle, id: String) -> Result<(), String> {
     TemplateService::delete_template(&app, &id)
+}
+
+#[tauri::command]
+pub async fn set_default_template(app: AppHandle, id: String) -> Result<(), String> {
+    TemplateService::set_default_template(&app, id)
+}
+
+#[tauri::command]
+pub async fn get_default_template(
+    app: AppHandle,
+    template_type: TemplateType,
+) -> Result<ReportTemplate, String> {
+    TemplateService::get_default_template(&app, template_type)
 }

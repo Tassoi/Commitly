@@ -125,6 +125,75 @@ impl TemplateService {
         Ok(())
     }
 
+    /// Sets a template as the default for its type
+    /// When a template is set as default, all other templates of the same type will be unmarked
+    pub fn set_default_template(app: &AppHandle, id: String) -> Result<(), String> {
+        // Get the template to find its type
+        let template = Self::get_template(app, &id)?;
+        let template_type = template.template_type.clone();
+
+        // Handle built-in templates
+        if id.starts_with("builtin-") {
+            // Built-in templates are always default, just need to clear other defaults
+            let mut custom_templates = Self::load_custom_templates(app)?;
+            for t in custom_templates.iter_mut() {
+                if t.template_type == template_type {
+                    t.is_default = false;
+                }
+            }
+            Self::save_custom_templates(app, &custom_templates)?;
+            return Ok(());
+        }
+
+        // For custom templates, update all templates of the same type
+        let mut custom_templates = Self::load_custom_templates(app)?;
+        let mut found = false;
+
+        for t in custom_templates.iter_mut() {
+            if t.template_type == template_type {
+                if t.id == id {
+                    t.is_default = true;
+                    found = true;
+                } else {
+                    t.is_default = false;
+                }
+            }
+        }
+
+        if !found {
+            return Err(format!("Template not found: {}", id));
+        }
+
+        Self::save_custom_templates(app, &custom_templates)?;
+        Ok(())
+    }
+
+    /// Gets the default template for a given type
+    pub fn get_default_template(
+        app: &AppHandle,
+        template_type: TemplateType,
+    ) -> Result<ReportTemplate, String> {
+        // Load all templates
+        let custom_templates = Self::load_custom_templates(app)?;
+
+        // Find default custom template first
+        if let Some(default_template) = custom_templates
+            .iter()
+            .find(|t| t.template_type == template_type && t.is_default)
+        {
+            return Ok(default_template.clone());
+        }
+
+        // Fall back to built-in templates
+        match template_type {
+            TemplateType::Weekly => Ok(Self::get_builtin_weekly()),
+            TemplateType::Monthly => Ok(Self::get_builtin_monthly()),
+            TemplateType::Custom => {
+                Err("No default template found for custom type".to_string())
+            }
+        }
+    }
+
     /// Gets the built-in weekly template
     fn get_builtin_weekly() -> ReportTemplate {
         ReportTemplate::new_builtin(
@@ -172,9 +241,7 @@ impl TemplateService {
         let value = serde_json::to_value(templates)
             .map_err(|e| format!("Failed to serialize templates: {}", e))?;
 
-        store
-            .set(TEMPLATES_STORE_KEY.to_string(), value)
-            .map_err(|e| format!("Failed to save templates: {}", e))?;
+        store.set(TEMPLATES_STORE_KEY.to_string(), value);
 
         store
             .save()
