@@ -7,9 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Edit, Trash2, Copy, FileText, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import type { ReportTemplate } from '../../types';
+import type { ReportTemplate, TemplateType } from '../../types';
 
 const TemplateManagement = () => {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
@@ -20,6 +27,7 @@ const TemplateManagement = () => {
 
   // Form state
   const [formName, setFormName] = useState('');
+  const [formType, setFormType] = useState<TemplateType>('weekly');
   const [formContent, setFormContent] = useState('');
 
   // Load templates on mount
@@ -45,6 +53,7 @@ const TemplateManagement = () => {
     setIsEditing(false);
     setIsCreating(false);
     setFormName(template.name);
+    setFormType(template.type);
     setFormContent(template.content);
   };
 
@@ -53,6 +62,7 @@ const TemplateManagement = () => {
     setIsCreating(true);
     setIsEditing(false);
     setFormName('');
+    setFormType('weekly'); // Default to weekly
     setFormContent('');
   };
 
@@ -71,6 +81,7 @@ const TemplateManagement = () => {
     setIsCreating(true);
     setIsEditing(false);
     setFormName(`${selectedTemplate.name} (副本)`);
+    setFormType(selectedTemplate.type);
     setFormContent(selectedTemplate.content);
     setSelectedTemplate(null);
   };
@@ -86,6 +97,7 @@ const TemplateManagement = () => {
         // Create new template
         const newTemplate = await invoke<ReportTemplate>('create_template', {
           name: formName,
+          templateType: formType,
           content: formContent,
         });
         toast.success('模板创建成功');
@@ -137,9 +149,11 @@ const TemplateManagement = () => {
   const handleCancel = () => {
     if (selectedTemplate) {
       setFormName(selectedTemplate.name);
+      setFormType(selectedTemplate.type);
       setFormContent(selectedTemplate.content);
     } else {
       setFormName('');
+      setFormType('weekly');
       setFormContent('');
     }
     setIsEditing(false);
@@ -310,6 +324,29 @@ const TemplateManagement = () => {
                   disabled={!isEditMode}
                   placeholder="输入模板名称"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="template-type">模板类型</Label>
+                <Select
+                  value={formType}
+                  onValueChange={(value) => setFormType(value as TemplateType)}
+                  disabled={!isCreating}
+                >
+                  <SelectTrigger id="template-type">
+                    <SelectValue placeholder="选择模板类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">周报</SelectItem>
+                    <SelectItem value="monthly">月报</SelectItem>
+                    <SelectItem value="custom">自定义</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {isCreating
+                    ? '选择模板适用的报告类型'
+                    : '模板创建后类型不可修改'}
+                </p>
               </div>
 
               <div className="space-y-2">

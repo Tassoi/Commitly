@@ -74,10 +74,18 @@ export const DEFAULT_LLM_PROVIDERS = {
   },
 };
 
+// M5: Proxy configuration
+export interface ProxyConfig {
+  enabled: boolean;
+  httpProxy?: string;
+  httpsProxy?: string;
+}
+
 export interface AppConfig {
   llm_provider: LLMProvider;
   exportFormat: 'markdown' | 'html' | 'pdf';
   timezone: string;
+  proxy_config?: ProxyConfig;
 }
 
 export interface RepoStats {

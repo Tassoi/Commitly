@@ -7,12 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FileText, Calendar, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Report } from '../../types';
+import type { Report, ReportTemplate, TemplateType } from '../../types';
 
 // 全局监听器实例，确保整个应用只有一个
 let globalListener: UnlistenFn | null = null;
+let listenerSetupInProgress = false;
 
 const ReportViewer = () => {
   const { currentReport, isGenerating, setReport, setGenerating } = useReportStore();
@@ -21,92 +30,107 @@ const ReportViewer = () => {
   // Streaming state for real-time progress display
   const [streamingContent, setStreamingContent] = useState<string>('');
 
+  // Template selection state
+  const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
+  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
   // Listen for streaming progress events from backend
   useEffect(() => {
-    const setupListener = async () => {
-      // 如果全局监听器已存在，先清理
-      if (globalListener) {
-        console.log('⚠️ Global listener already exists, cleaning up');
-        await globalListener();
-        globalListener = null;
-      }
+    if (globalListener || listenerSetupInProgress) {
+      return;
+    }
 
+    listenerSetupInProgress = true;
+    let isActive = true;
+
+    const setupListener = async () => {
       try {
         const unlisten = await listen<string>('report-generation-progress', (event) => {
-          console.log('📝 Received chunk:', event.payload);
           setStreamingContent((prev) => prev + event.payload);
         });
+        if (!isActive) {
+          unlisten();
+          return;
+        }
         globalListener = unlisten;
-        console.log('✅ Streaming listener setup successful');
       } catch (error) {
         console.error('Failed to setup listener:', error);
+      } finally {
+        listenerSetupInProgress = false;
       }
     };
 
     setupListener();
 
-    // 清理函数：只在组件真正卸载时清理
     return () => {
-      // 注意：不在这里清理 globalListener，因为我们希望它在整个应用生命周期内存在
-      console.log('🔄 ReportViewer unmounting (listener kept alive)');
+      isActive = false;
+      if (globalListener) {
+        globalListener();
+        globalListener = null;
+      }
     };
   }, []);
 
-  const handleGenerateWeekly = async () => {
-    try {
-      setGenerating(true);
-      setStreamingContent(''); // Clear previous streaming content
-      const selectedCommitObjects = commits.filter((c) => selectedCommits.includes(c.hash));
-      const commitsToUse = selectedCommitObjects.length > 0 ? selectedCommitObjects : commits;
+  // Load templates on mount
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const allTemplates = await invoke<ReportTemplate[]>('list_templates');
+        setTemplates(allTemplates);
 
-      const report = await invoke<Report>('generate_weekly_report', {
-        commits: commitsToUse,
-        templateId: null, // Use default template
-      });
+        // Set default selected template based on current report type
+        const typeTemplates = allTemplates.filter((t) => t.type === reportType);
+        const defaultTemplate = typeTemplates.find((t) => t.isDefault) || typeTemplates[0];
+        if (defaultTemplate) {
+          setSelectedTemplateId(defaultTemplate.id);
+        }
+      } catch (err) {
+        console.error('Failed to load templates:', err);
+        toast.error('加载模板失败');
+      }
+    };
+    loadTemplates();
+  }, []);
 
-      // Enrich report with metadata
-      const enrichedReport: Report = {
-        ...report,
-        id: report.id || crypto.randomUUID(),
-        name: `Weekly Report - ${new Date().toLocaleDateString()}`,
-        lastModified: Math.floor(Date.now() / 1000),
-        repoIds: currentRepoId ? [currentRepoId] : [],
-      };
-
-      setReport(enrichedReport);
-    } catch (err) {
-      console.error('生成周报失败:', err);
-      toast.error(`生成周报失败: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setGenerating(false);
+  // Update selected template when report type changes
+  useEffect(() => {
+    const typeTemplates = templates.filter((t) => t.type === reportType);
+    const defaultTemplate = typeTemplates.find((t) => t.isDefault) || typeTemplates[0];
+    if (defaultTemplate) {
+      setSelectedTemplateId(defaultTemplate.id);
     }
-  };
+  }, [reportType, templates]);
 
-  const handleGenerateMonthly = async () => {
+  const handleGenerateReport = async () => {
     try {
       setGenerating(true);
       setStreamingContent(''); // Clear previous streaming content
       const selectedCommitObjects = commits.filter((c) => selectedCommits.includes(c.hash));
       const commitsToUse = selectedCommitObjects.length > 0 ? selectedCommitObjects : commits;
 
-      const report = await invoke<Report>('generate_monthly_report', {
+      const commandName = reportType === 'weekly' ? 'generate_weekly_report' : 'generate_monthly_report';
+      const reportTypeName = reportType === 'weekly' ? '周报' : '月报';
+
+      const report = await invoke<Report>(commandName, {
         commits: commitsToUse,
-        templateId: null, // Use default template
+        templateId: selectedTemplateId || null,
       });
 
       // Enrich report with metadata
       const enrichedReport: Report = {
         ...report,
         id: report.id || crypto.randomUUID(),
-        name: `Monthly Report - ${new Date().toLocaleDateString()}`,
+        name: `${reportTypeName} - ${new Date().toLocaleDateString()}`,
         lastModified: Math.floor(Date.now() / 1000),
         repoIds: currentRepoId ? [currentRepoId] : [],
       };
 
       setReport(enrichedReport);
+      toast.success(`${reportTypeName}生成成功`);
     } catch (err) {
-      console.error('生成月报失败:', err);
-      toast.error(`生成月报失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(`生成${reportType === 'weekly' ? '周报' : '月报'}失败:`, err);
+      toast.error(`生成${reportType === 'weekly' ? '周报' : '月报'}失败: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setGenerating(false);
     }
@@ -146,6 +170,9 @@ const ReportViewer = () => {
     }
   };
 
+  // Get current type templates for dropdown
+  const currentTypeTemplates = templates.filter((t) => t.type === reportType);
+
   return (
     <Card>
       <CardHeader>
@@ -153,24 +180,63 @@ const ReportViewer = () => {
         <CardDescription>Generate and preview commit reports</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Button
-            onClick={handleGenerateWeekly}
-            disabled={isGenerating || commits.length === 0}
-            variant="default"
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {isGenerating ? 'Generating...' : 'Generate Weekly Report'}
-          </Button>
-          <Button
-            onClick={handleGenerateMonthly}
-            disabled={isGenerating || commits.length === 0}
-            variant="secondary"
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            {isGenerating ? 'Generating...' : 'Generate Monthly Report'}
-          </Button>
+        {/* Report Type Selection */}
+        <div className="space-y-2">
+          <Label>报告类型</Label>
+          <div className="flex gap-2">
+            <Button
+              variant={reportType === 'weekly' ? 'default' : 'outline'}
+              onClick={() => setReportType('weekly')}
+              className="flex-1"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              周报
+            </Button>
+            <Button
+              variant={reportType === 'monthly' ? 'default' : 'outline'}
+              onClick={() => setReportType('monthly')}
+              className="flex-1"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              月报
+            </Button>
+          </div>
         </div>
+
+        {/* Template Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="template-select">选择模板</Label>
+          <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+            <SelectTrigger id="template-select">
+              <SelectValue placeholder="选择模板" />
+            </SelectTrigger>
+            <SelectContent>
+              {currentTypeTemplates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
+                  {template.isDefault && ' (默认)'}
+                  {template.isBuiltin && ' 📌'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            {currentTypeTemplates.length === 0
+              ? `暂无${reportType === 'weekly' ? '周报' : '月报'}模板`
+              : `共 ${currentTypeTemplates.length} 个模板可选`}
+          </p>
+        </div>
+
+        {/* Generate Button */}
+        <Button
+          onClick={handleGenerateReport}
+          disabled={isGenerating || commits.length === 0 || !selectedTemplateId}
+          variant="default"
+          className="w-full"
+        >
+          {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isGenerating ? '生成中...' : `生成${reportType === 'weekly' ? '周报' : '月报'}`}
+        </Button>
 
         {isGenerating && (
           <Card>

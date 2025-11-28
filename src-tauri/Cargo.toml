@@ -18,7 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
@@ -52,6 +52,10 @@ anyhow = "1.0"
 # Markdown to HTML conversion (M4)
 pulldown-cmark = "0.9"
 
-# Keyring for secure storage (M5 - deferred)
-# keyring = "2.0"
+# Local encryption for secure storage (M5)
+aes-gcm = "0.10"
+rand = "0.8"
+base64 = "0.21"
+sha2 = "0.10"
+machine-uid = "0.3"
 

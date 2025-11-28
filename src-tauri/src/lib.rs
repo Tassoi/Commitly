@@ -43,10 +43,9 @@ pub fn run() {
             template::delete_template,
             template::set_default_template,
             template::get_default_template,
-            // Config commands
+            // Config commands (M5: API Keys are encrypted automatically)
             config::save_config,
             config::load_config,
-            config::save_api_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

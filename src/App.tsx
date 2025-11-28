@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { toast, Toaster } from 'sonner';
 import { Sidebar } from './components/Sidebar';
 import CommitList from './components/CommitList';
@@ -26,6 +27,7 @@ function App() {
   const { commits, repoInfo, setRepoInfo, setCommits, addRepoToHistory } = useRepoStore();
   const { selectRepository, openRepository, getCommits } = useGitRepo();
 
+
   // Tab state
   const [activeTab, setActiveTab] = useState('report');
 
@@ -36,13 +38,9 @@ function App() {
   // Hero button handlers
   const handleGenerateReport = () => {
     setActiveTab('report');
-    toast.success('切换到报告视图');
-    // TODO: 触发默认报告生成逻辑
   };
 
   const handleViewHistory = () => {
-    // TODO: 实现侧边栏展开和高亮历史区域
-    toast.info('查看报告历史');
   };
 
   const handleOpenRepo = async () => {

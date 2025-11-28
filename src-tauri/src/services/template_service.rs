@@ -50,9 +50,10 @@ impl TemplateService {
     pub fn create_template(
         app: &AppHandle,
         name: String,
+        template_type: TemplateType,
         content: String,
     ) -> Result<ReportTemplate, String> {
-        let template = ReportTemplate::new_custom(name, content);
+        let template = ReportTemplate::new_user_template(name, template_type, content);
 
         // Load existing templates
         let mut templates = Self::load_custom_templates(app)?;

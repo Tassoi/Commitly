@@ -18,9 +18,10 @@ pub async fn get_template(app: AppHandle, id: String) -> Result<ReportTemplate, 
 pub async fn create_template(
     app: AppHandle,
     name: String,
+    template_type: TemplateType,
     content: String,
 ) -> Result<ReportTemplate, String> {
-    TemplateService::create_template(&app, name, content)
+    TemplateService::create_template(&app, name, template_type, content)
 }
 
 #[tauri::command]

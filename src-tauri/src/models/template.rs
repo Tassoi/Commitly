@@ -28,13 +28,28 @@ pub struct ReportTemplate {
 }
 
 impl ReportTemplate {
-    /// Creates a new custom template
+    /// Creates a new custom template (deprecated - use new_user_template instead)
     pub fn new_custom(name: String, content: String) -> Self {
         let now = chrono::Utc::now().timestamp();
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             name,
             template_type: TemplateType::Custom,
+            content,
+            is_builtin: false,
+            is_default: false,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    /// Creates a new user-defined template with specified type
+    pub fn new_user_template(name: String, template_type: TemplateType, content: String) -> Self {
+        let now = chrono::Utc::now().timestamp();
+        Self {
+            id: uuid::Uuid::new_v4().to_string(),
+            name,
+            template_type,
             content,
             is_builtin: false,
             is_default: false,

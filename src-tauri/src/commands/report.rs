@@ -14,8 +14,8 @@ pub async fn generate_weekly_report(
     // Load configuration
     let config = StorageService::load_config(&app)?;
 
-    // Create services
-    let llm_service = Arc::new(LLMService::new(config.llm_provider));
+    // Create services (M5: pass proxy_config)
+    let llm_service = Arc::new(LLMService::new(config.llm_provider, Some(config.proxy_config)));
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming
@@ -31,8 +31,8 @@ pub async fn generate_monthly_report(
     // Load configuration
     let config = StorageService::load_config(&app)?;
 
-    // Create services
-    let llm_service = Arc::new(LLMService::new(config.llm_provider));
+    // Create services (M5: pass proxy_config)
+    let llm_service = Arc::new(LLMService::new(config.llm_provider, Some(config.proxy_config)));
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming

@@ -45,8 +45,7 @@ const LLMConfigTab = () => {
 
   // Track changes
   useEffect(() => {
-    const changed =
-      JSON.stringify(provider) !== JSON.stringify(config.llm_provider);
+    const changed = JSON.stringify(provider) !== JSON.stringify(config.llm_provider);
     setHasChanges(changed);
     setTestResult('idle'); // Reset test result when provider changes
   }, [provider, config.llm_provider]);
@@ -70,12 +69,11 @@ const LLMConfigTab = () => {
         ...config,
         llm_provider: provider,
       };
-      console.log('Saving config:', configToSave);
       await saveConfig(configToSave);
-      toast.success('Configuration saved successfully');
+      toast.success('配置保存成功');
       setHasChanges(false);
     } catch (error) {
-      toast.error('Failed to save configuration');
+      toast.error('配置保存失败');
       console.error('Save error:', error);
     }
   };
@@ -88,10 +86,10 @@ const LLMConfigTab = () => {
     try {
       await testConnection(provider);
       setTestResult('success');
-      toast.success('Connection test successful');
+      toast.success('连接测试成功');
     } catch (error) {
       setTestResult('error');
-      toast.error('Connection test failed');
+      toast.error('连接测试失败');
       console.error('Test error:', error);
     }
   };
@@ -146,10 +144,10 @@ const LLMConfigTab = () => {
           type="password"
           value={provider.api_key}
           onChange={(e) => updateField('api_key', e.target.value)}
-          placeholder="Enter your API key"
+          placeholder="sk-..."
         />
         <p className="text-sm text-muted-foreground">
-          Your API key (stored in plaintext for M3, will be encrypted in M5)
+          🔒 API Key 将使用 AES-256-GCM 加密存储在本地配置文件中
         </p>
       </div>
 
@@ -205,27 +203,25 @@ const LLMConfigTab = () => {
         <Button
           onClick={handleTest}
           variant="outline"
-          disabled={isTesting || !provider.api_key}
+          disabled={isTesting || !provider.api_key.trim()}
         >
           {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Test Connection
         </Button>
 
-        <Button
-          onClick={handleSave}
-          disabled={isLoading || !hasChanges}
-        >
+        <Button onClick={handleSave} disabled={isLoading || !hasChanges}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Configuration
         </Button>
       </div>
 
       <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-        <p className="font-medium mb-1">Tips:</p>
+        <p className="font-medium mb-1">安全说明：</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>You can use custom relay endpoints for any provider</li>
-          <li>Test the connection before saving to ensure credentials are correct</li>
-          <li>API keys will be encrypted in M5 milestone</li>
+          <li>API Key 使用 AES-256-GCM 加密后存储在本地</li>
+          <li>加密密钥从机器 UUID 派生，每台机器不同</li>
+          <li>您的 API Key 仅存储在本机，不会上传到任何服务器</li>
+          <li>支持自定义中转端点（Base URL）</li>
         </ul>
       </div>
     </div>

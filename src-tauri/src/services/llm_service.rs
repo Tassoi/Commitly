@@ -1,6 +1,6 @@
 // LLM service - handles AI model interactions with streaming support
 
-use crate::models::{Commit, LLMProvider};
+use crate::models::{Commit, LLMProvider, ProxyConfig};
 use anyhow::{Context, Result};
 use futures::StreamExt;
 use reqwest::Client;
@@ -13,9 +13,23 @@ pub struct LLMService {
 }
 
 impl LLMService {
-    pub fn new(provider: LLMProvider) -> Self {
-        let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(90)) // 90秒：足够处理50个提交，又不会让用户觉得卡死
+    pub fn new(provider: LLMProvider, proxy_config: Option<ProxyConfig>) -> Self {
+        let mut client_builder = Client::builder()
+            .timeout(std::time::Duration::from_secs(90)); // 90秒：足够处理50个提交，又不会让用户觉得卡死
+
+        // M5: Apply proxy configuration if provided
+        if let Some(proxy_cfg) = proxy_config {
+            if let Some(proxy_url) = proxy_cfg.get_https_proxy() {
+                if let Ok(proxy) = reqwest::Proxy::https(&proxy_url) {
+                    client_builder = client_builder.proxy(proxy);
+                    println!("✅ HTTPS proxy configured: {}", proxy_url);
+                } else {
+                    eprintln!("⚠️ Invalid proxy URL: {}", proxy_url);
+                }
+            }
+        }
+
+        let client = client_builder
             .build()
             .expect("Failed to create HTTP client");
 

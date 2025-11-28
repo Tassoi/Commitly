@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import LLMConfigTab from './LLMConfigTab';
 import TemplateManagement from './TemplateManagement';
+import ProxyConfigTab from './ProxyConfigTab';
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
@@ -18,9 +19,10 @@ const Settings = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="appearance" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="llm">LLM Config</TabsTrigger>
+            <TabsTrigger value="proxy">Proxy</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
@@ -70,6 +72,10 @@ const Settings = () => {
 
           <TabsContent value="llm" className="space-y-4">
             <LLMConfigTab />
+          </TabsContent>
+
+          <TabsContent value="proxy" className="space-y-4">
+            <ProxyConfigTab />
           </TabsContent>
 
           <TabsContent value="templates">

@@ -36,7 +36,6 @@ const RepoHistory = () => {
         Math.floor(now / 1000)
       );
       setCommits(commits);
-
       toast.success(`Successfully loaded ${repo.name}`, { id: toastId });
     } catch (error) {
       console.error('Failed to load repository:', error);
