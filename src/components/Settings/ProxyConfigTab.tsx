@@ -32,11 +32,14 @@ const ProxyConfigTab = () => {
   // Track changes
   useEffect(() => {
     const changed =
-      JSON.stringify(proxyConfig) !== JSON.stringify(config.proxy_config || {
-        enabled: false,
-        httpProxy: '',
-        httpsProxy: '',
-      });
+      JSON.stringify(proxyConfig) !==
+      JSON.stringify(
+        config.proxy_config || {
+          enabled: false,
+          httpProxy: '',
+          httpsProxy: '',
+        }
+      );
     setHasChanges(changed);
   }, [proxyConfig, config.proxy_config]);
 
@@ -66,7 +69,7 @@ const ProxyConfigTab = () => {
   const handleTestProxy = async () => {
     setIsTesting(true);
     try {
-      const proxyUrl = proxyConfig.enabled ? (proxyConfig.httpsProxy || proxyConfig.httpProxy) : null;
+      const proxyUrl = proxyConfig.enabled ? proxyConfig.httpsProxy || proxyConfig.httpProxy : null;
       const result = await invoke<string>('test_proxy', { proxyUrl });
       toast.success(result);
     } catch (error) {
@@ -82,9 +85,7 @@ const ProxyConfigTab = () => {
       <div className="flex items-center justify-between space-x-2">
         <div className="space-y-0.5">
           <Label htmlFor="proxy-enabled">Enable Proxy</Label>
-          <p className="text-sm text-muted-foreground">
-            Use proxy server for LLM API requests
-          </p>
+          <p className="text-sm text-muted-foreground">Use proxy server for LLM API requests</p>
         </div>
         <Switch
           id="proxy-enabled"
@@ -123,7 +124,8 @@ const ProxyConfigTab = () => {
           disabled={!proxyConfig.enabled}
         />
         <p className="text-sm text-muted-foreground">
-          HTTPS proxy URL for secure connections. Falls back to environment variables (HTTPS_PROXY, https_proxy) if not set.
+          HTTPS proxy URL for secure connections. Falls back to environment variables (HTTPS_PROXY,
+          https_proxy) if not set.
         </p>
       </div>
 

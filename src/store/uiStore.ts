@@ -18,8 +18,7 @@ export const useUIStore = create<UIStore>()(
       theme: 'system',
 
       // Actions
-      toggleSidebar: () =>
-        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 

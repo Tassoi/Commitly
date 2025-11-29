@@ -32,11 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -56,7 +52,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, Loader2, X, FileText, Calendar, Clock, FolderGit2, User } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
+  Loader2,
+  X,
+  FileText,
+  Calendar,
+  Clock,
+  FolderGit2,
+  User,
+} from 'lucide-react';
 import { EmptyState } from '../EmptyState';
 import { toast } from 'sonner';
 import { type DateRange } from 'react-day-picker';
@@ -85,8 +93,15 @@ const CommitList = ({
   onRepoFilterChange,
 }: CommitListProps) => {
   const navigate = useNavigate();
-  const { selectedCommits, toggleCommit, commitDiffs, loadingDiffs, loadCommitDiff, activeRepos, currentRepoId } =
-    useRepoStore();
+  const {
+    selectedCommits,
+    toggleCommit,
+    commitDiffs,
+    loadingDiffs,
+    loadCommitDiff,
+    activeRepos,
+    currentRepoId,
+  } = useRepoStore();
   const { setReport, isGenerating, setGenerating } = useReportStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCommit, setSelectedCommit] = useState<(Commit & { repoId?: string }) | null>(null);
@@ -192,7 +207,8 @@ const CommitList = ({
         };
       });
 
-      const commandName = reportType === 'weekly' ? 'generate_weekly_report' : 'generate_monthly_report';
+      const commandName =
+        reportType === 'weekly' ? 'generate_weekly_report' : 'generate_monthly_report';
       const reportTypeName = reportType === 'weekly' ? '周报' : '月报';
 
       const report = await invoke<Report>(commandName, {
@@ -233,7 +249,7 @@ const CommitList = ({
   const rowSelection = useMemo(
     () =>
       selectedCommits.reduce(
-        (acc:any, sc:any) => ({ ...acc, [sc.hash]: true }),
+        (acc: any, sc: any) => ({ ...acc, [sc.hash]: true }),
         {} as Record<string, boolean>
       ),
     [selectedCommits]
@@ -369,10 +385,12 @@ const CommitList = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => {
-                  setSelectedAuthor('all');
-                  onSearchChange('');
-                }}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedAuthor('all');
+                    onSearchChange('');
+                  }}
+                >
                   所有作者
                 </DropdownMenuItem>
                 {uniqueAuthors.map((author) => (
@@ -399,11 +417,7 @@ const CommitList = ({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <CalendarComponent
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={onDateRangeChange}
-                />
+                <CalendarComponent mode="range" selected={dateRange} onSelect={onDateRangeChange} />
               </PopoverContent>
             </Popover>
             {activeRepos.size > 1 && onRepoFilterChange && (
@@ -439,7 +453,11 @@ const CommitList = ({
               </Button>
             )}
           </div>
-          <Button onClick={() => setReportDialogOpen(true)} size="sm" disabled={selectedCommits.length === 0}>
+          <Button
+            onClick={() => setReportDialogOpen(true)}
+            size="sm"
+            disabled={selectedCommits.length === 0}
+          >
             <FileText className="mr-2 h-4 w-4" />
             生成报告
           </Button>
@@ -558,7 +576,9 @@ const CommitList = ({
             <DialogHeader>
               <DialogTitle>生成报告</DialogTitle>
               <DialogDescription>
-                {selectedCommits.length > 0 ? `基于 ${selectedCommits.length} 个选中的提交` : '基于所有提交'}
+                {selectedCommits.length > 0
+                  ? `基于 ${selectedCommits.length} 个选中的提交`
+                  : '基于所有提交'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">

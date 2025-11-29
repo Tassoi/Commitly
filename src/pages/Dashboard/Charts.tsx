@@ -1,8 +1,26 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, RadialBar, RadialBarChart, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  RadialBar,
+  RadialBarChart,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
@@ -59,7 +77,7 @@ export function CommitTrendChart({ commits }: { commits: Commit[] }) {
   } satisfies ChartConfig;
 
   return (
-    <Card >
+    <Card>
       <CardHeader className="flex flex-col items-stretch border-b px-6 pt-4 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1  pb-3 sm:!py-0">
           <CardTitle>最近 30 天提交趋势</CardTitle>
@@ -117,7 +135,13 @@ export function CommitTrendChart({ commits }: { commits: Commit[] }) {
 
 export function AuthorRadialChart({ commits }: { commits: Commit[] }) {
   const top = useMemo(() => topAuthors(commits, 5), [commits]);
-  const palette = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
+  const palette = [
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
+  ];
   const chartData = top.map((item, idx) => ({
     author: item.author || 'Unknown',
     commits: item.count,
@@ -138,7 +162,10 @@ export function AuthorRadialChart({ commits }: { commits: Commit[] }) {
       <CardContent className="flex-1 pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[280px]">
           <RadialBarChart data={chartData} innerRadius={20} outerRadius={110}>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="author" />} />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel nameKey="author" />}
+            />
             <RadialBar dataKey="commits" background />
           </RadialBarChart>
         </ChartContainer>
@@ -147,9 +174,15 @@ export function AuthorRadialChart({ commits }: { commits: Commit[] }) {
         <div className="text-muted-foreground leading-none">显示前 5 名作者的提交次数</div>
         <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-2">
           {chartData.map((item) => (
-            <div key={item.author} className="flex items-center justify-between rounded-md border px-2 py-1.5">
+            <div
+              key={item.author}
+              className="flex items-center justify-between rounded-md border px-2 py-1.5"
+            >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.fill as string }} />
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.fill as string }}
+                />
                 <span className="truncate text-sm font-medium">{item.author}</span>
               </div>
               <span className="text-xs tabular-nums text-muted-foreground">{item.commits}</span>
@@ -164,7 +197,7 @@ export function AuthorRadialChart({ commits }: { commits: Commit[] }) {
 export function CommitTypeChart({ commits }: { commits: Commit[] }) {
   const data = useMemo(() => commitTypes(commits), [commits]);
   const config = {
-    commits: { label: 'Commits',color:'var(--chart-1)'  },
+    commits: { label: 'Commits', color: 'var(--chart-1)' },
     feat: { label: 'feat', color: 'var(--chart-1)' },
     fix: { label: 'fix', color: 'var(--chart-2)' },
     docs: { label: 'docs', color: 'var(--chart-3)' },

@@ -7,7 +7,6 @@ import { type DateRange } from 'react-day-picker';
 import { Commit } from '@/types';
 import { toast } from 'sonner';
 
-
 export function Commits() {
   const { commits, activeRepos, addRepoToHistory, addActiveRepo } = useRepoStore();
   const { selectRepository, openRepository, getCommits } = useGitRepo();
@@ -37,7 +36,7 @@ export function Commits() {
     }
   };
 
-  const filteredCommits = commits.filter((c:Commit) => {
+  const filteredCommits = commits.filter((c: Commit) => {
     // Search filter
     if (searchKeyword) {
       if (searchKeyword.startsWith('EXACT:')) {
@@ -45,11 +44,10 @@ export function Commits() {
         if (c.author !== exactAuthor) return false;
       } else {
         const keyword = searchKeyword.toLowerCase();
-        const matchesSearch = (
+        const matchesSearch =
           c.author.toLowerCase().includes(keyword) ||
           c.email.toLowerCase().includes(keyword) ||
-          c.message.toLowerCase().includes(keyword)
-        );
+          c.message.toLowerCase().includes(keyword);
         if (!matchesSearch) return false;
       }
     }
@@ -84,7 +82,7 @@ export function Commits() {
         <EmptyState
           title="No Repository Selected"
           description="Open a repository to view commit history"
-          action={{ label: "Open Repository", onClick: handleOpenRepo }}
+          action={{ label: 'Open Repository', onClick: handleOpenRepo }}
         />
       ) : (
         <CommitList

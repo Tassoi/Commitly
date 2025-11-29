@@ -56,55 +56,55 @@ const ReportViewer = () => {
       </div>
 
       <Card>
-      {currentReport ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default">{currentReport.type.toUpperCase()}</Badge>
-                      <CardTitle className="text-lg">{currentReport.name}</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Based on {currentReport.commits.length} commit(s)
-                    </CardDescription>
-                  </div>
+        {currentReport ? (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleExport('markdown')}
-                      title="导出为 Markdown"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Markdown
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleExport('html')}
-                      title="导出为 HTML"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      HTML
-                    </Button>
+                    <Badge variant="default">{currentReport.type.toUpperCase()}</Badge>
+                    <CardTitle className="text-lg">{currentReport.name}</CardTitle>
                   </div>
+                  <CardDescription>
+                    Based on {currentReport.commits.length} commit(s)
+                  </CardDescription>
                 </div>
-              </CardHeader>
-              <Separator />
-              <ScrollArea className="h-[80vh] w-full rounded-md p-4 border">
-                <MarkdownRenderer content={currentReport.content} />
-              </ScrollArea>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No report generated yet. Go to Commits page to generate a report.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExport('markdown')}
+                    title="导出为 Markdown"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Markdown
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExport('html')}
+                    title="导出为 HTML"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    HTML
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <Separator />
+            <ScrollArea className="h-[80vh] w-full rounded-md p-4 border">
+              <MarkdownRenderer content={currentReport.content} />
+            </ScrollArea>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                No report generated yet. Go to Commits page to generate a report.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </Card>
     </div>
   );

@@ -12,7 +12,8 @@ import type { RepoInfo, Commit, RepoHistoryItem } from '@/types';
 import { useTranslation } from 'react-i18next';
 
 export function TopBar() {
-  const { activeRepos, repoHistory, addRepoToHistory, addActiveRepo, removeActiveRepo } = useRepoStore();
+  const { activeRepos, repoHistory, addRepoToHistory, addActiveRepo, removeActiveRepo } =
+    useRepoStore();
   const { selectRepository, openRepository, getCommits } = useGitRepo();
   const { t } = useTranslation();
 
@@ -34,7 +35,9 @@ export function TopBar() {
       toast.dismiss(loadingToast);
       toast.success(t('已添加仓库', { name: info.name, count: fetchedCommits.length }));
     } catch (error) {
-      toast.error(t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') }));
+      toast.error(
+        t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') })
+      );
     }
   };
 
@@ -53,7 +56,9 @@ export function TopBar() {
       toast.dismiss(loadingToast);
       toast.success(t('已添加仓库', { name: info.name, count: fetchedCommits.length }));
     } catch (error) {
-      toast.error(t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') }));
+      toast.error(
+        t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') })
+      );
     }
   };
 
@@ -95,19 +100,28 @@ export function TopBar() {
                     </h4>
                     <ScrollArea className="max-h-[200px]">
                       <div className="space-y-2">
-                        {Array.from(activeRepos.entries()).map(([repoId, { repoInfo, commits }]) => (
-                          <div key={repoId} className="flex items-center justify-between p-2 rounded-md border text-sm">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{repoInfo.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {t('个提交', { count: commits.length })}
+                        {Array.from(activeRepos.entries()).map(
+                          ([repoId, { repoInfo, commits }]) => (
+                            <div
+                              key={repoId}
+                              className="flex items-center justify-between p-2 rounded-md border text-sm"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{repoInfo.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {t('个提交', { count: commits.length })}
+                                </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeActiveRepo(repoId)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => removeActiveRepo(repoId)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     </ScrollArea>
                   </div>
@@ -132,7 +146,9 @@ export function TopBar() {
                             <div
                               key={repo.path}
                               className="flex items-center justify-between p-2 rounded-md border hover:bg-accent cursor-pointer text-sm"
-                              onClick={() => !isActive && handleSelectFromHistory(repo.path, repo.name)}
+                              onClick={() =>
+                                !isActive && handleSelectFromHistory(repo.path, repo.name)
+                              }
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium truncate">{repo.name}</div>

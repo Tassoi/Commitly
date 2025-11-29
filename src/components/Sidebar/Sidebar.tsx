@@ -23,7 +23,11 @@ const Sidebar = () => {
         onClick={toggleSidebar}
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        {sidebarCollapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
       </Button>
 
       {/* Sidebar Content */}

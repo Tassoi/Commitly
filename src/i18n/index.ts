@@ -8,15 +8,13 @@ const resources = {
   en: { translation: en },
 };
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: localStorage.getItem('gitlog-language') || 'zh', // 默认中文
-    fallbackLng: 'zh',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: localStorage.getItem('gitlog-language') || 'zh', // 默认中文
+  fallbackLng: 'zh',
+  interpolation: {
+    escapeValue: false,
+  },
+});
 
 export default i18n;

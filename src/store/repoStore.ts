@@ -66,9 +66,7 @@ export const useRepoStore = create<RepoStore>()(
           selectedCommits: state.selectedCommits.some(
             (sc) => sc.hash === hash && sc.repoId === repoId
           )
-            ? state.selectedCommits.filter(
-                (sc) => !(sc.hash === hash && sc.repoId === repoId)
-              )
+            ? state.selectedCommits.filter((sc) => !(sc.hash === hash && sc.repoId === repoId))
             : [...state.selectedCommits, { hash, repoId }],
         })),
 
@@ -79,10 +77,12 @@ export const useRepoStore = create<RepoStore>()(
         const newActiveRepos = new Map(get().activeRepos);
         newActiveRepos.set(repoId, { repoInfo, commits });
 
-        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(([id, { repoInfo }]) => ({
-          repoId: id,
-          repoInfo,
-        }));
+        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(
+          ([id, { repoInfo }]) => ({
+            repoId: id,
+            repoInfo,
+          })
+        );
 
         set({
           activeRepos: newActiveRepos,
@@ -97,14 +97,14 @@ export const useRepoStore = create<RepoStore>()(
         const newActiveRepos = new Map(get().activeRepos);
         newActiveRepos.delete(repoId);
 
-        const newSelectedCommits = get().selectedCommits.filter(
-          (sc) => sc.repoId !== repoId
-        );
+        const newSelectedCommits = get().selectedCommits.filter((sc) => sc.repoId !== repoId);
 
-        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(([id, { repoInfo }]) => ({
-          repoId: id,
-          repoInfo,
-        }));
+        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(
+          ([id, { repoInfo }]) => ({
+            repoId: id,
+            repoInfo,
+          })
+        );
 
         set({
           activeRepos: newActiveRepos,

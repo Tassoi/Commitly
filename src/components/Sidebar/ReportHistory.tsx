@@ -22,8 +22,14 @@ import {
 import { Input } from '@/components/ui/input';
 
 const ReportHistory = () => {
-  const { reportHistory, currentReportId, removeReportFromHistory, switchToReport, updateReportName, updateReportContent } =
-    useReportStore();
+  const {
+    reportHistory,
+    currentReportId,
+    removeReportFromHistory,
+    switchToReport,
+    updateReportName,
+    updateReportContent,
+  } = useReportStore();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -93,19 +99,28 @@ const ReportHistory = () => {
                     onMouseEnter={() => setHoveredId(report.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
-                    <FileText className={cn('h-4 w-4 shrink-0 mt-0.5', isActive && 'text-primary')} />
+                    <FileText
+                      className={cn('h-4 w-4 shrink-0 mt-0.5', isActive && 'text-primary')}
+                    />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="truncate text-sm font-medium">{report.name}</p>
-                        <Badge variant={isActive ? 'default' : 'secondary'} className="shrink-0 text-xs">
+                        <Badge
+                          variant={isActive ? 'default' : 'secondary'}
+                          className="shrink-0 text-xs"
+                        >
                           {report.type.toUpperCase()}
                         </Badge>
                       </div>
                       <div className="mt-1 flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">{formatDate(report.generatedAt)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(report.generatedAt)}
+                        </p>
                         <span className="text-xs text-muted-foreground">•</span>
-                        <p className="text-xs text-muted-foreground">{report.commits.length} commits</p>
+                        <p className="text-xs text-muted-foreground">
+                          {report.commits.length} commits
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -129,10 +144,7 @@ const ReportHistory = () => {
                     Edit
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-            
-                    onClick={() => removeReportFromHistory(report.id)}
-                  >
+                  <ContextMenuItem onClick={() => removeReportFromHistory(report.id)}>
                     Delete
                   </ContextMenuItem>
                 </ContextMenuContent>

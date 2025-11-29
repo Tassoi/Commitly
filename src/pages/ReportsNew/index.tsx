@@ -18,7 +18,8 @@ export function ReportsNew() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Report generation wizard will be implemented here. For now, please use the Reports page to generate reports.
+            Report generation wizard will be implemented here. For now, please use the Reports page
+            to generate reports.
           </p>
         </CardContent>
       </Card>

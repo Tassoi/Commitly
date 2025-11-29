@@ -26,7 +26,9 @@ export function ThemeToggle() {
 
   const applyTheme = (newTheme: Theme) => {
     if (newTheme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(systemTheme);
     } else {
@@ -54,7 +56,9 @@ export function ThemeToggle() {
 
   const getIcon = () => {
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
       return systemTheme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />;
     }
     return theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />;

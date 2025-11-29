@@ -282,9 +282,7 @@ const TemplateManagement = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>
-                {isCreating ? '新建模板' : isEditing ? '编辑模板' : '模板详情'}
-              </CardTitle>
+              <CardTitle>{isCreating ? '新建模板' : isEditing ? '编辑模板' : '模板详情'}</CardTitle>
               <CardDescription>
                 {isEditMode
                   ? '编辑 Handlebars 模板内容'
@@ -305,7 +303,11 @@ const TemplateManagement = () => {
                       <Edit className="mr-2 h-4 w-4" />
                       编辑
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
                       <Trash2 className="mr-2 h-4 w-4" />
                       删除
                     </Button>
@@ -354,9 +356,7 @@ const TemplateManagement = () => {
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
-                  {isCreating
-                    ? '选择模板适用的报告类型'
-                    : '模板创建后类型不可修改'}
+                  {isCreating ? '选择模板适用的报告类型' : '模板创建后类型不可修改'}
                 </p>
               </div>
 
@@ -396,7 +396,11 @@ const TemplateManagement = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
               取消
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>

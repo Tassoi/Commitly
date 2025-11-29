@@ -66,9 +66,7 @@ export const useReportStore = create<ReportStore>()(
         }
 
         // Sort by lastModified (most recent first) and limit to 50
-        newHistory = newHistory
-          .sort((a, b) => b.lastModified - a.lastModified)
-          .slice(0, 50);
+        newHistory = newHistory.sort((a, b) => b.lastModified - a.lastModified).slice(0, 50);
 
         set({ reportHistory: newHistory, currentReportId: report.id });
       },

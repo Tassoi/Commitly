@@ -35,15 +35,17 @@ export function Dashboard() {
       toast.dismiss(loadingToast);
       toast.success(t('已添加仓库', { name: info.name, count: fetchedCommits.length }));
     } catch (error) {
-      toast.error(t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') }));
+      toast.error(
+        t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') })
+      );
     }
   };
 
-  const uniqueAuthors = useMemo(() => new Set(commits.map((c:any) => c.author)).size, [commits]);
+  const uniqueAuthors = useMemo(() => new Set(commits.map((c: any) => c.author)).size, [commits]);
 
   const last7Days = useMemo(
     () =>
-      commits.filter((c:any) => {
+      commits.filter((c: any) => {
         const commitDate = new Date(c.timestamp * 1000);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         return commitDate >= sevenDaysAgo;
@@ -86,7 +88,9 @@ export function Dashboard() {
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
                 <CardDescription>{t('总提交数')}</CardDescription>
-                <CardTitle className="text-3xl font-semibold tabular-nums">{commits.length}</CardTitle>
+                <CardTitle className="text-3xl font-semibold tabular-nums">
+                  {commits.length}
+                </CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <GitCommit className="w-3 h-3 mr-1" />
@@ -105,7 +109,9 @@ export function Dashboard() {
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
                 <CardDescription>{t('贡献者')}</CardDescription>
-                <CardTitle className="text-3xl font-semibold tabular-nums">{uniqueAuthors}</CardTitle>
+                <CardTitle className="text-3xl font-semibold tabular-nums">
+                  {uniqueAuthors}
+                </CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <Users className="w-3 h-3 mr-1" />

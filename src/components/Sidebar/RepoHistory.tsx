@@ -8,16 +8,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 const RepoHistory = () => {
-  const { repoHistory, currentRepoId, removeRepoFromHistory, switchToRepo, setRepoInfo, setCommits } = useRepoStore();
+  const {
+    repoHistory,
+    currentRepoId,
+    removeRepoFromHistory,
+    switchToRepo,
+    setRepoInfo,
+    setCommits,
+  } = useRepoStore();
   const { openRepository, getCommits } = useGitRepo();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const handleRepoClick = async (repoId: string) => {
-    const repo = repoHistory.find(r => r.id === repoId);
+    const repo = repoHistory.find((r) => r.id === repoId);
     if (!repo) return;
-
-
 
     try {
       setLoadingId(repoId);
@@ -36,10 +41,11 @@ const RepoHistory = () => {
         Math.floor(now / 1000)
       );
       setCommits(commits);
-
     } catch (error) {
       console.error('Failed to load repository:', error);
-      toast.error(`Failed to load repository: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to load repository: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setLoadingId(null);
     }
