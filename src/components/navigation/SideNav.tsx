@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, FolderGit2, GitCommit, FileText, FileCode, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, GitCommit, FileText, FileCode, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,6 @@ export function SideNav() {
 
   const navItems = [
     { to: '/', icon: Home, label: 'Dashboard' },
-    { to: '/repos', icon: FolderGit2, label: 'Repos' },
     { to: '/commits', icon: GitCommit, label: 'Commits' },
     { to: '/reports', icon: FileText, label: 'Reports' },
     { to: '/templates', icon: FileCode, label: 'Templates' },

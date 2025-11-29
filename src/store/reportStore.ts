@@ -77,9 +77,18 @@ export const useReportStore = create<ReportStore>()(
         const state = get();
         const newHistory = state.reportHistory.filter((r) => r.id !== reportId);
 
-        // If deleting current report, clear currentReportId
+        // 如果删除当前报告，尝试切换到列表首个，否则置空
         if (state.currentReportId === reportId) {
-          set({ reportHistory: newHistory, currentReportId: null, currentReport: null });
+          if (newHistory.length > 0) {
+            const next = newHistory[0];
+            set({
+              reportHistory: newHistory,
+              currentReportId: next.id,
+              currentReport: next,
+            });
+          } else {
+            set({ reportHistory: newHistory, currentReportId: null, currentReport: null });
+          }
         } else {
           set({ reportHistory: newHistory });
         }

@@ -16,6 +16,7 @@ interface RepoStore {
   // Persisted state
   repoHistory: RepoHistoryItem[];
   currentRepoId: string | null;
+  persistedActiveRepos: Array<{ repoId: string; repoInfo: RepoInfo }>;
 
   // Basic repo actions
   setRepoInfo: (info: RepoInfo | null) => void;
@@ -53,6 +54,7 @@ export const useRepoStore = create<RepoStore>()(
       // Persisted state
       repoHistory: [],
       currentRepoId: null,
+      persistedActiveRepos: [],
 
       // Basic actions
       setRepoInfo: (info) => set({ repoInfo: info }),
@@ -76,10 +78,17 @@ export const useRepoStore = create<RepoStore>()(
       addActiveRepo: (repoId, repoInfo, commits) => {
         const newActiveRepos = new Map(get().activeRepos);
         newActiveRepos.set(repoId, { repoInfo, commits });
+
+        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(([id, { repoInfo }]) => ({
+          repoId: id,
+          repoInfo,
+        }));
+
         set({
           activeRepos: newActiveRepos,
           repoInfo,
           currentRepoId: repoId,
+          persistedActiveRepos,
         });
         get().refreshMergedCommits();
       },
@@ -92,9 +101,15 @@ export const useRepoStore = create<RepoStore>()(
           (sc) => sc.repoId !== repoId
         );
 
+        const persistedActiveRepos = Array.from(newActiveRepos.entries()).map(([id, { repoInfo }]) => ({
+          repoId: id,
+          repoInfo,
+        }));
+
         set({
           activeRepos: newActiveRepos,
           selectedCommits: newSelectedCommits,
+          persistedActiveRepos,
         });
         get().refreshMergedCommits();
       },
@@ -206,10 +221,10 @@ export const useRepoStore = create<RepoStore>()(
     }),
     {
       name: 'repo-storage',
-      // Only persist history and currentRepoId
       partialize: (state) => ({
         repoHistory: state.repoHistory,
         currentRepoId: state.currentRepoId,
+        persistedActiveRepos: state.persistedActiveRepos,
       }),
     }
   )

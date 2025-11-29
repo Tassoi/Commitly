@@ -1,12 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './layouts/Layout';
 import { Dashboard } from './pages/Dashboard';
-import { Repos } from './pages/Repos';
 import { Commits } from './pages/Commits';
 import { Reports } from './pages/Reports';
 import { ReportsNew } from './pages/ReportsNew';
 import { Templates } from './pages/Templates';
 import { SettingsPage } from './pages/Settings';
+import { NotFound } from './pages/NotFound';
 
 export const router = createBrowserRouter([
   {
@@ -16,10 +16,6 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Dashboard />,
-      },
-      {
-        path: 'repos',
-        element: <Repos />,
       },
       {
         path: 'commits',
@@ -40,6 +36,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <SettingsPage />,
+      },
+      {
+        path: '*',
+        element: <NotFound />,
       },
     ],
   },

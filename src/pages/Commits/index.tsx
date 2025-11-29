@@ -1,18 +1,41 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useRepoStore } from '@/store/repoStore';
+import { useGitRepo } from '@/hooks/useGitRepo';
 import CommitList from '@/components/CommitList';
 import { EmptyState } from '@/components/EmptyState';
 import { type DateRange } from 'react-day-picker';
 import { Commit } from '@/types';
+import { toast } from 'sonner';
 
 
 export function Commits() {
-  const navigate = useNavigate();
-  const { commits, repoInfo, activeRepos } = useRepoStore();
+  const { commits, activeRepos, addRepoToHistory, addActiveRepo } = useRepoStore();
+  const { selectRepository, openRepository, getCommits } = useGitRepo();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedRepoFilter, setSelectedRepoFilter] = useState<string>('all');
+
+  const handleOpenRepo = async () => {
+    try {
+      const path = await selectRepository();
+      if (!path) return;
+
+      const loadingToast = toast.loading('正在打开仓库...');
+      const info = await openRepository(path);
+      const repoId = addRepoToHistory(info);
+
+      const now = Date.now();
+      const from = Math.floor((now - 30 * 24 * 60 * 60 * 1000) / 1000);
+      const to = Math.floor(now / 1000);
+      const fetchedCommits = await getCommits(path, from, to);
+
+      addActiveRepo(repoId, info, fetchedCommits);
+      toast.dismiss(loadingToast);
+      toast.success(`已添加 ${info.name}，加载了 ${fetchedCommits.length} 个提交`);
+    } catch (error) {
+      toast.error(`打开仓库失败：${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
 
   const filteredCommits = commits.filter((c:Commit) => {
     // Search filter
@@ -61,7 +84,7 @@ export function Commits() {
         <EmptyState
           title="No Repository Selected"
           description="Open a repository to view commit history"
-          action={{ label: "Open Repository", onClick: () => navigate('/repos') }}
+          action={{ label: "Open Repository", onClick: handleOpenRepo }}
         />
       ) : (
         <CommitList

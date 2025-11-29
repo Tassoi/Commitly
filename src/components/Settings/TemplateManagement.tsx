@@ -14,6 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Copy, FileText, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ReportTemplate, TemplateType } from '../../types';
@@ -24,6 +32,8 @@ const TemplateManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -126,13 +136,11 @@ const TemplateManagement = () => {
     if (!selectedTemplate) return;
     if (selectedTemplate.isBuiltin) {
       toast.error('内置模板不可删除');
+      setIsDeleteDialogOpen(false);
       return;
     }
 
-    if (!confirm(`确定要删除模板 "${selectedTemplate.name}" 吗？`)) {
-      return;
-    }
-
+    setIsDeleting(true);
     try {
       await invoke('delete_template', { id: selectedTemplate.id });
       toast.success('模板删除成功');
@@ -140,9 +148,12 @@ const TemplateManagement = () => {
       setSelectedTemplate(null);
       setFormName('');
       setFormContent('');
+      setIsDeleteDialogOpen(false);
     } catch (err) {
       console.error('Failed to delete template:', err);
       toast.error(`删除失败: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -294,7 +305,7 @@ const TemplateManagement = () => {
                       <Edit className="mr-2 h-4 w-4" />
                       编辑
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={handleDelete}>
+                    <Button size="sm" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       删除
                     </Button>
@@ -375,6 +386,25 @@ const TemplateManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除模板</DialogTitle>
+            <DialogDescription>
+              {`确定要删除模板 "${selectedTemplate?.name ?? ''}" 吗？此操作不可撤销。`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? '删除中...' : '确定删除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
