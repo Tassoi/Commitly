@@ -1,9 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUIStore } from '../../store';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+
 import RepoHistory from './RepoHistory';
-import ReportHistory from './ReportHistory';
 import { cn } from '@/lib/utils';
 
 const Sidebar = () => {
@@ -38,14 +37,6 @@ const Sidebar = () => {
         <div className="flex-shrink-0 p-4">
           <h2 className="mb-3 text-sm font-semibold">Repositories</h2>
           <RepoHistory />
-        </div>
-
-        <Separator />
-
-        {/* Report History Section */}
-        <div className="flex-shrink-0 p-4">
-          <h2 className="mb-3 text-sm font-semibold">Reports</h2>
-          <ReportHistory />
         </div>
       </div>
     </aside>

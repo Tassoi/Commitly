@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,12 +9,16 @@ import {
   ColumnDef,
   ColumnFiltersState,
 } from '@tanstack/react-table';
-import type { Commit } from '../../types';
+import type { Commit, Report, ReportTemplate } from '../../types';
 import { useRepoStore } from '../../store';
+import { useReportStore } from '../../store';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -21,7 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -38,42 +56,185 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, Loader2, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, Loader2, X, FileText, Calendar, Clock, FolderGit2, User } from 'lucide-react';
 import { EmptyState } from '../EmptyState';
+import { toast } from 'sonner';
+import { type DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+
+let globalListener: UnlistenFn | null = null;
 
 interface CommitListProps {
   commits: Commit[];
+  allCommits?: Commit[];
   searchKeyword: string;
   onSearchChange: (value: string) => void;
-  timeRange: string;
-  onTimeRangeChange: (value: string) => void;
+  dateRange?: DateRange;
+  onDateRangeChange: (value: DateRange | undefined) => void;
+  repoFilter?: string;
+  onRepoFilterChange?: (value: string) => void;
 }
 
 const CommitList = ({
   commits,
+  allCommits,
   searchKeyword,
   onSearchChange,
-  timeRange,
-  onTimeRangeChange,
+  dateRange,
+  onDateRangeChange,
+  repoFilter = 'all',
+  onRepoFilterChange,
 }: CommitListProps) => {
-  const { selectedCommits, toggleCommit, repoInfo, commitDiffs, loadingDiffs, loadCommitDiff } =
+  const navigate = useNavigate();
+  const { selectedCommits, toggleCommit, repoInfo, commitDiffs, loadingDiffs, loadCommitDiff, activeRepos, currentRepoId } =
     useRepoStore();
+  const { setReport, isGenerating, setGenerating } = useReportStore();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
+  const [selectedCommit, setSelectedCommit] = useState<(Commit & { repoId?: string }) | null>(null);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
-  const handleOpenDialog = (commit: Commit) => {
+  // Report generation state
+  const [streamingContent, setStreamingContent] = useState<string>('');
+  const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
+  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+  // Listen for streaming progress
+  useEffect(() => {
+    let cancelled = false;
+    const setupListener = async () => {
+      if (globalListener) return;
+      try {
+        const unlisten = await listen<string>('report-generation-progress', (event) => {
+          setStreamingContent((prev) => prev + event.payload);
+        });
+        if (cancelled) {
+          unlisten();
+          return;
+        }
+        globalListener = unlisten;
+      } catch (error) {
+        console.error('Failed to setup listener:', error);
+      }
+    };
+    setupListener();
+    return () => {
+      cancelled = true;
+      if (globalListener) {
+        globalListener();
+        globalListener = null;
+      }
+    };
+  }, []);
+
+  // Load templates
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const allTemplates = await invoke<ReportTemplate[]>('list_templates');
+        setTemplates(allTemplates);
+        const typeTemplates = allTemplates.filter((t) => t.type === reportType);
+        const defaultTemplate = typeTemplates.find((t) => t.isDefault) || typeTemplates[0];
+        if (defaultTemplate) {
+          setSelectedTemplateId(defaultTemplate.id);
+        }
+      } catch (err) {
+        console.error('Failed to load templates:', err);
+      }
+    };
+    loadTemplates();
+  }, []);
+
+  // Update template when report type changes
+  useEffect(() => {
+    const typeTemplates = templates.filter((t) => t.type === reportType);
+    const defaultTemplate = typeTemplates.find((t) => t.isDefault) || typeTemplates[0];
+    if (defaultTemplate) {
+      setSelectedTemplateId(defaultTemplate.id);
+    }
+  }, [reportType, templates]);
+
+  const handleOpenDialog = (commit: Commit & { repoId?: string }) => {
     setSelectedCommit(commit);
     setDialogOpen(true);
-    if (repoInfo && !commitDiffs[commit.hash]) {
-      loadCommitDiff(repoInfo.path, commit.hash);
+    if (commit.repoId && !commitDiffs[commit.hash]) {
+      loadCommitDiff(commit.hash, commit.repoId);
     }
   };
+
+  const handleGenerateReport = async () => {
+    try {
+      setGenerating(true);
+      setStreamingContent('');
+
+      const selectedCommitObjects = commits.filter((c: any) =>
+        selectedCommits.some((sc: any) => sc.hash === c.hash && sc.repoId === c.repoId)
+      );
+      const commitsToUse = selectedCommitObjects;
+
+      const commitsByRepo = new Map<string, any[]>();
+      commitsToUse.forEach((commit: any) => {
+        const repoId = commit.repoId || currentRepoId;
+        if (!repoId) return;
+        if (!commitsByRepo.has(repoId)) {
+          commitsByRepo.set(repoId, []);
+        }
+        commitsByRepo.get(repoId)!.push(commit);
+      });
+
+      const repoGroups = Array.from(commitsByRepo.entries()).map(([repoId, commits]) => {
+        const repoData = activeRepos.get(repoId);
+        return {
+          repo_id: repoId,
+          repo_name: repoData?.repoInfo.name || 'Unknown',
+          repo_path: repoData?.repoInfo.path || '',
+          commits,
+        };
+      });
+
+      const commandName = reportType === 'weekly' ? 'generate_weekly_report' : 'generate_monthly_report';
+      const reportTypeName = reportType === 'weekly' ? '周报' : '月报';
+
+      const report = await invoke<Report>(commandName, {
+        repoGroups,
+        templateId: selectedTemplateId || null,
+      });
+
+      const enrichedReport: Report = {
+        ...report,
+        id: report.id || crypto.randomUUID(),
+        name: `${reportTypeName} - ${new Date().toLocaleDateString()}`,
+        lastModified: Math.floor(Date.now() / 1000),
+        repoIds: Array.from(commitsByRepo.keys()),
+      };
+
+      setReport(enrichedReport);
+      toast.success(`${reportTypeName}生成成功`);
+      setReportDialogOpen(false);
+      navigate('/reports');
+    } catch (err) {
+      console.error(`生成失败:`, err);
+      toast.error(`生成失败: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const currentTypeTemplates = templates.filter((t) => t.type === reportType);
+
+  const uniqueAuthors = useMemo(() => {
+    const authors = new Set<string>();
+    (allCommits || commits).forEach((c: any) => authors.add(c.author));
+    return Array.from(authors).sort();
+  }, [allCommits, commits]);
+
+  const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
 
   const rowSelection = useMemo(
     () =>
       selectedCommits.reduce(
-        (acc, hash) => ({ ...acc, [hash]: true }),
+        (acc:any, sc:any) => ({ ...acc, [sc.hash]: true }),
         {} as Record<string, boolean>
       ),
     [selectedCommits]
@@ -108,6 +269,20 @@ const CommitList = ({
         ),
       },
       {
+        accessorKey: 'repoId',
+        header: 'Repository',
+        cell: ({ row }) => {
+          const repoId = (row.original as any).repoId;
+          if (!repoId) return null;
+          const repoData = activeRepos.get(repoId);
+          return repoData ? (
+            <Badge variant="secondary" className="text-xs">
+              {repoData.repoInfo.name}
+            </Badge>
+          ) : null;
+        },
+      },
+      {
         accessorKey: 'message',
         header: 'Message',
         cell: ({ row }) => (
@@ -135,7 +310,7 @@ const CommitList = ({
         ),
       },
     ],
-    []
+    [activeRepos]
   );
 
   const table = useReactTable({
@@ -148,15 +323,18 @@ const CommitList = ({
       const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
       const newSelectedHashes = Object.keys(newSelection).filter((hash) => newSelection[hash]);
 
-      selectedCommits.forEach((hash) => {
-        if (!newSelectedHashes.includes(hash)) {
-          toggleCommit(hash);
+      selectedCommits.forEach((sc: any) => {
+        if (!newSelectedHashes.includes(sc.hash)) {
+          toggleCommit(sc.hash, sc.repoId);
         }
       });
 
       newSelectedHashes.forEach((hash) => {
-        if (!selectedCommits.includes(hash)) {
-          toggleCommit(hash);
+        if (!selectedCommits.some((sc: any) => sc.hash === hash)) {
+          const commit = commits.find((c) => c.hash === hash) as any;
+          if (commit && commit.repoId) {
+            toggleCommit(hash, commit.repoId);
+          }
         }
       });
     },
@@ -184,23 +362,70 @@ const CommitList = ({
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center gap-2">
-            <Input
-              placeholder="按作者/关键词搜索"
-              value={searchKeyword}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="h-8 w-[150px] lg:w-[250px]"
-            />
-            <Select value={timeRange} onValueChange={onTimeRangeChange}>
-              <SelectTrigger className="w-[180px] h-8">
-                <SelectValue placeholder="选择时间范围" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">最近 7 天</SelectItem>
-                <SelectItem value="30days">最近 30 天</SelectItem>
-                <SelectItem value="3months">最近 3 个月</SelectItem>
-                <SelectItem value="6months">最近 6 个月</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  <User className="mr-2 h-4 w-4" />
+                  {selectedAuthor === 'all' ? '所有作者' : selectedAuthor}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => {
+                  setSelectedAuthor('all');
+                  onSearchChange('');
+                }}>
+                  所有作者
+                </DropdownMenuItem>
+                {uniqueAuthors.map((author) => (
+                  <DropdownMenuItem
+                    key={author}
+                    onClick={() => {
+                      setSelectedAuthor(author);
+                      onSearchChange(`EXACT:${author}`);
+                    }}
+                  >
+                    {author}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {dateRange?.from && dateRange?.to
+                    ? `${format(dateRange.from, 'MM/dd/yyyy')} - ${format(dateRange.to, 'MM/dd/yyyy')}`
+                    : '选择日期范围'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={onDateRangeChange}
+                />
+              </PopoverContent>
+            </Popover>
+            {activeRepos.size > 1 && onRepoFilterChange && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <FolderGit2 className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onRepoFilterChange('all')}>
+                    All Repositories
+                  </DropdownMenuItem>
+                  {Array.from<[string, any]>(activeRepos.entries()).map(([id, { repoInfo }]) => (
+                    <DropdownMenuItem key={id} onClick={() => onRepoFilterChange(id)}>
+                      {repoInfo.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {(searchKeyword || columnFilters.length > 0) && (
               <Button
                 variant="ghost"
@@ -215,6 +440,10 @@ const CommitList = ({
               </Button>
             )}
           </div>
+          <Button onClick={() => setReportDialogOpen(true)} size="sm" disabled={selectedCommits.length === 0}>
+            <FileText className="mr-2 h-4 w-4" />
+            生成报告
+          </Button>
         </div>
 
         {commits.length === 0 ? (
@@ -324,6 +553,84 @@ const CommitList = ({
             </div>
           </>
         )}
+
+        <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>生成报告</DialogTitle>
+              <DialogDescription>
+                {selectedCommits.length > 0 ? `基于 ${selectedCommits.length} 个选中的提交` : '基于所有提交'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>报告类型</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={reportType === 'weekly' ? 'default' : 'outline'}
+                    onClick={() => setReportType('weekly')}
+                    className="flex-1"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    周报
+                  </Button>
+                  <Button
+                    variant={reportType === 'monthly' ? 'default' : 'outline'}
+                    onClick={() => setReportType('monthly')}
+                    className="flex-1"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    月报
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>选择模板</Label>
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择模板" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currentTypeTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                        {template.isDefault && ' (默认)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                onClick={handleGenerateReport}
+                disabled={isGenerating || !selectedTemplateId}
+                className="w-full"
+              >
+                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isGenerating ? '生成中...' : `生成${reportType === 'weekly' ? '周报' : '月报'}`}
+              </Button>
+
+              {isGenerating && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <CardTitle className="text-base">生成中...</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[200px] w-full rounded-md border bg-muted/30 p-4">
+                      <pre className="whitespace-pre-wrap text-xs">
+                        {streamingContent || 'Waiting for response...'}
+                      </pre>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh]">

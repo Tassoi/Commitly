@@ -2,12 +2,21 @@
 
 use crate::models::{Commit, Report, ReportType};
 use crate::services::{llm_service::LLMService, report_service::ReportService, storage_service::StorageService};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::AppHandle;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RepoGroup {
+    pub repo_id: String,
+    pub repo_name: String,
+    pub repo_path: String,
+    pub commits: Vec<Commit>,
+}
+
 #[tauri::command]
 pub async fn generate_weekly_report(
-    commits: Vec<Commit>,
+    repo_groups: Vec<RepoGroup>,
     template_id: Option<String>,
     app: AppHandle,
 ) -> Result<Report, String> {
@@ -19,12 +28,12 @@ pub async fn generate_weekly_report(
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming
-    report_service.generate_weekly(commits, template_id, app).await
+    report_service.generate_weekly(repo_groups, template_id, app).await
 }
 
 #[tauri::command]
 pub async fn generate_monthly_report(
-    commits: Vec<Commit>,
+    repo_groups: Vec<RepoGroup>,
     template_id: Option<String>,
     app: AppHandle,
 ) -> Result<Report, String> {
@@ -36,7 +45,7 @@ pub async fn generate_monthly_report(
     let report_service = ReportService::new(llm_service);
 
     // Generate report with streaming
-    report_service.generate_monthly(commits, template_id, app).await
+    report_service.generate_monthly(repo_groups, template_id, app).await
 }
 
 // Note: export_report command moved to commands/export.rs for M4 implementation

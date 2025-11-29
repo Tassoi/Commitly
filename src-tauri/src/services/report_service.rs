@@ -1,5 +1,6 @@
 // Report service - orchestrates report generation with Handlebars templates
 
+use crate::commands::report::RepoGroup;
 use crate::models::{Commit, Report, ReportType, TemplateType};
 use crate::services::{llm_service::LLMService, template_service::TemplateService};
 use handlebars::Handlebars;
@@ -34,36 +35,42 @@ impl ReportService {
     /// Generates a weekly report with streaming
     pub async fn generate_weekly(
         &self,
-        commits: Vec<Commit>,
+        repo_groups: Vec<RepoGroup>,
         template_id: Option<String>,
         app: AppHandle,
     ) -> Result<Report, String> {
-        if commits.is_empty() {
+        if repo_groups.is_empty() {
+            return Err("No repositories provided for report generation".to_string());
+        }
+
+        // Flatten commits for stats
+        let all_commits: Vec<Commit> = repo_groups
+            .iter()
+            .flat_map(|g| g.commits.clone())
+            .collect();
+
+        if all_commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
         }
 
-        // Limit commit count 
-        const MAX_COMMITS: usize = 50;
-        let commits = if commits.len() > MAX_COMMITS {
-            println!("⚠️  提交数量过多 ({})，仅使用最近的 {} 个提交", commits.len(), MAX_COMMITS);
-            commits.into_iter().take(MAX_COMMITS).collect()
-        } else {
-            commits
-        };
-
-        let stats = self.calculate_stats(&commits);
+        let stats = self.calculate_stats(&all_commits);
         let context = json!({
-            "commits": commits.iter().map(|c| json!({
-                "hash": &c.hash[..7.min(c.hash.len())],
-                "message": &c.message,
-                "author": &c.author,
-                "timestamp": format_timestamp(c.timestamp),
+            "repo_groups": repo_groups.iter().map(|group| json!({
+                "repo_name": &group.repo_name,
+                "commit_count": group.commits.len(),
+                "commits": group.commits.iter().map(|c| json!({
+                    "hash": &c.hash[..7.min(c.hash.len())],
+                    "message": &c.message,
+                    "author": &c.author,
+                    "timestamp": format_timestamp(c.timestamp),
+                })).collect::<Vec<_>>(),
             })).collect::<Vec<_>>(),
-            "total_commits": commits.len(),
+            "total_repos": repo_groups.len(),
+            "total_commits": all_commits.len(),
             "date_range": format!(
                 "{} - {}",
-                format_timestamp(commits.iter().map(|c| c.timestamp).min().unwrap_or(0)),
-                format_timestamp(commits.iter().map(|c| c.timestamp).max().unwrap_or(0))
+                format_timestamp(all_commits.iter().map(|c| c.timestamp).min().unwrap_or(0)),
+                format_timestamp(all_commits.iter().map(|c| c.timestamp).max().unwrap_or(0))
             ),
             "unique_authors": stats.unique_authors,
             "files_changed": stats.total_files_changed,
@@ -95,45 +102,51 @@ impl ReportService {
             report_type: ReportType::Weekly,
             generated_at: chrono::Utc::now().timestamp(),
             content,
-            commits: commits.clone(),
+            commits: all_commits.clone(),
         })
     }
 
     /// Generates a monthly report with streaming
     pub async fn generate_monthly(
         &self,
-        commits: Vec<Commit>,
+        repo_groups: Vec<RepoGroup>,
         template_id: Option<String>,
         app: AppHandle,
     ) -> Result<Report, String> {
-        if commits.is_empty() {
+        if repo_groups.is_empty() {
+            return Err("No repositories provided for report generation".to_string());
+        }
+
+        // Flatten commits for stats
+        let all_commits: Vec<Commit> = repo_groups
+            .iter()
+            .flat_map(|g| g.commits.clone())
+            .collect();
+
+        if all_commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
         }
 
-        // Limit commit count
-        const MAX_COMMITS: usize = 100;
-        let commits = if commits.len() > MAX_COMMITS {
-            println!("⚠️  提交数量过多 ({})，仅使用最近的 {} 个提交", commits.len(), MAX_COMMITS);
-            commits.into_iter().take(MAX_COMMITS).collect()
-        } else {
-            commits
-        };
-
-        let stats = self.calculate_stats(&commits);
-        let commits_by_week = self.group_commits_by_week(&commits);
+        let stats = self.calculate_stats(&all_commits);
+        let commits_by_week = self.group_commits_by_week(&all_commits);
 
         let context = json!({
-            "commits": commits.iter().map(|c| json!({
-                "hash": &c.hash[..7.min(c.hash.len())],
-                "message": &c.message,
-                "author": &c.author,
-                "timestamp": format_timestamp(c.timestamp),
+            "repo_groups": repo_groups.iter().map(|group| json!({
+                "repo_name": &group.repo_name,
+                "commit_count": group.commits.len(),
+                "commits": group.commits.iter().map(|c| json!({
+                    "hash": &c.hash[..7.min(c.hash.len())],
+                    "message": &c.message,
+                    "author": &c.author,
+                    "timestamp": format_timestamp(c.timestamp),
+                })).collect::<Vec<_>>(),
             })).collect::<Vec<_>>(),
-            "total_commits": commits.len(),
+            "total_repos": repo_groups.len(),
+            "total_commits": all_commits.len(),
             "date_range": format!(
                 "{} - {}",
-                format_timestamp(commits.iter().map(|c| c.timestamp).min().unwrap_or(0)),
-                format_timestamp(commits.iter().map(|c| c.timestamp).max().unwrap_or(0))
+                format_timestamp(all_commits.iter().map(|c| c.timestamp).min().unwrap_or(0)),
+                format_timestamp(all_commits.iter().map(|c| c.timestamp).max().unwrap_or(0))
             ),
             "unique_authors": stats.unique_authors,
             "files_changed": stats.total_files_changed,
@@ -166,7 +179,7 @@ impl ReportService {
             report_type: ReportType::Monthly,
             generated_at: chrono::Utc::now().timestamp(),
             content,
-            commits: commits.clone(),
+            commits: all_commits.clone(),
         })
     }
 

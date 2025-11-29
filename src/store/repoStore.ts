@@ -8,9 +8,10 @@ interface RepoStore {
   // Runtime state (not persisted)
   repoInfo: RepoInfo | null;
   commits: Commit[];
-  selectedCommits: string[];
+  selectedCommits: Array<{ hash: string; repoId: string }>;
   commitDiffs: Record<string, string>;
   loadingDiffs: Set<string>;
+  activeRepos: Map<string, { repoInfo: RepoInfo; commits: Commit[] }>;
 
   // Persisted state
   repoHistory: RepoHistoryItem[];
@@ -19,11 +20,16 @@ interface RepoStore {
   // Basic repo actions
   setRepoInfo: (info: RepoInfo | null) => void;
   setCommits: (commits: Commit[]) => void;
-  toggleCommit: (hash: string) => void;
+  toggleCommit: (hash: string, repoId: string) => void;
   clearSelection: () => void;
 
+  // Multi-repo actions
+  addActiveRepo: (repoId: string, repoInfo: RepoInfo, commits: Commit[]) => void;
+  removeActiveRepo: (repoId: string) => void;
+  refreshMergedCommits: () => void;
+
   // Diff actions
-  loadCommitDiff: (repoPath: string, hash: string) => Promise<void>;
+  loadCommitDiff: (hash: string, repoId: string) => Promise<void>;
 
   // History management
   addRepoToHistory: (repo: RepoInfo) => string;
@@ -42,6 +48,7 @@ export const useRepoStore = create<RepoStore>()(
       selectedCommits: [],
       commitDiffs: {},
       loadingDiffs: new Set(),
+      activeRepos: new Map(),
 
       // Persisted state
       repoHistory: [],
@@ -52,19 +59,67 @@ export const useRepoStore = create<RepoStore>()(
 
       setCommits: (commits) => set({ commits }),
 
-      toggleCommit: (hash) =>
+      toggleCommit: (hash, repoId) =>
         set((state) => ({
-          selectedCommits: state.selectedCommits.includes(hash)
-            ? state.selectedCommits.filter((h) => h !== hash)
-            : [...state.selectedCommits, hash],
+          selectedCommits: state.selectedCommits.some(
+            (sc) => sc.hash === hash && sc.repoId === repoId
+          )
+            ? state.selectedCommits.filter(
+                (sc) => !(sc.hash === hash && sc.repoId === repoId)
+              )
+            : [...state.selectedCommits, { hash, repoId }],
         })),
 
       clearSelection: () => set({ selectedCommits: [] }),
 
+      // Multi-repo actions
+      addActiveRepo: (repoId, repoInfo, commits) => {
+        const newActiveRepos = new Map(get().activeRepos);
+        newActiveRepos.set(repoId, { repoInfo, commits });
+        set({
+          activeRepos: newActiveRepos,
+          repoInfo,
+          currentRepoId: repoId,
+        });
+        get().refreshMergedCommits();
+      },
+
+      removeActiveRepo: (repoId) => {
+        const newActiveRepos = new Map(get().activeRepos);
+        newActiveRepos.delete(repoId);
+
+        const newSelectedCommits = get().selectedCommits.filter(
+          (sc) => sc.repoId !== repoId
+        );
+
+        set({
+          activeRepos: newActiveRepos,
+          selectedCommits: newSelectedCommits,
+        });
+        get().refreshMergedCommits();
+      },
+
+      refreshMergedCommits: () => {
+        const allCommits: Array<Commit & { repoId: string }> = [];
+        get().activeRepos.forEach(({ commits }, repoId) => {
+          allCommits.push(...commits.map((c) => ({ ...c, repoId })));
+        });
+        allCommits.sort((a, b) => b.timestamp - a.timestamp);
+        set({ commits: allCommits });
+      },
+
       // Diff actions
-      loadCommitDiff: async (repoPath: string, hash: string) => {
+      loadCommitDiff: async (hash: string, repoId: string) => {
         const state = get();
         if (state.commitDiffs[hash] || state.loadingDiffs.has(hash)) return;
+
+        const repoData = state.activeRepos.get(repoId);
+        if (!repoData) {
+          console.error('Repository not found:', repoId);
+          return;
+        }
+
+        const repoPath = repoData.repoInfo.path;
 
         set((s) => ({ loadingDiffs: new Set(s.loadingDiffs).add(hash) }));
 

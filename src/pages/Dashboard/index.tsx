@@ -1,23 +1,31 @@
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useRepoStore } from '@/store/repoStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
+import { AuthorRadialChart, CommitTrendChart, CommitTypeChart } from './Charts';
 import { FolderOpen, FileText, GitCommit, Users, TrendingUp, Calendar } from 'lucide-react';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const repoInfo = useRepoStore((state) => state.repoInfo);
-  const commits = useRepoStore((state) => state.commits);
+  const repoInfo = useRepoStore((state:any) => state.repoInfo);
+  const commits = useRepoStore((state:any) => state.commits);
 
-  const uniqueAuthors = new Set(commits.map((c) => c.author)).size;
+  const uniqueAuthors = useMemo(() => new Set(commits.map((c:any) => c.author)).size, [commits]);
 
-  const last7Days = commits.filter((c) => {
-    const commitDate = new Date(c.timestamp * 1000);
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return commitDate >= sevenDaysAgo;
-  }).length;
+  const last7Days = useMemo(
+    () =>
+      commits.filter((c:any) => {
+        const commitDate = new Date(c.timestamp * 1000);
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return commitDate >= sevenDaysAgo;
+      }).length,
+    [commits]
+  );
+
+  const hasData = repoInfo && commits.length > 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -125,6 +133,16 @@ export function Dashboard() {
               </CardFooter>
             </Card>
           </div>
+
+          {hasData && (
+            <div className="space-y-4">
+              <CommitTrendChart commits={commits} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <AuthorRadialChart commits={commits} />
+                <CommitTypeChart commits={commits} />
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

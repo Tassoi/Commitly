@@ -1,13 +1,20 @@
 你是一名技术写作专家，请根据以下 Git 提交记录生成一份周报。
 
 ## 本周提交概况
+- 涉及仓库数：{{total_repos}}
 - 提交总数：{{total_commits}}
 - 时间范围：{{date_range}}
 - 作者数：{{unique_authors}}
 
-## 提交详情
-{{#each commits}}
+## 各仓库提交详情
+{{#each repo_groups}}
+### 仓库：{{this.repo_name}}
+提交数：{{this.commit_count}}
+
+{{#each this.commits}}
 - [{{this.hash}}] {{this.message}} ({{this.author}}, {{this.timestamp}})
+{{/each}}
+
 {{/each}}
 
 请用中文生成一份结构化的周报，包含：

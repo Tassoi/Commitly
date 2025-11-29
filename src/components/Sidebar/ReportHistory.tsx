@@ -44,7 +44,7 @@ const ReportHistory = () => {
   }
 
   return (
-    <ScrollArea className="h-[300px]">
+    <ScrollArea className="h-full">
       <div className="space-y-1 p-2">
         {reportHistory.map((report) => {
           const isActive = report.id === currentReportId;
