@@ -1,4 +1,6 @@
-# GitLog AI Reporter
+# ![Commitly Logo](public/logo_round.png)
+
+# Commitly
 
 > 用 LLM 玩转你的 Git 提交，自动把碎碎念写成周报月报。轻量、调皮、够实用。
 
