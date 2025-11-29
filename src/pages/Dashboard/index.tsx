@@ -9,18 +9,20 @@ import { EmptyState } from '@/components/EmptyState';
 import { AuthorRadialChart, CommitTrendChart, CommitTypeChart } from './Charts';
 import { FolderOpen, FileText, GitCommit, Users, TrendingUp, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { repoInfo, commits, activeRepos, addRepoToHistory, addActiveRepo } = useRepoStore();
   const { selectRepository, openRepository, getCommits } = useGitRepo();
+  const { t } = useTranslation();
 
   const handleOpenRepo = async () => {
     try {
       const path = await selectRepository();
       if (!path) return;
 
-      const loadingToast = toast.loading('正在打开仓库...');
+      const loadingToast = toast.loading(t('正在打开仓库'));
       const info = await openRepository(path);
       const repoId = addRepoToHistory(info);
 
@@ -31,9 +33,9 @@ export function Dashboard() {
 
       addActiveRepo(repoId, info, fetchedCommits);
       toast.dismiss(loadingToast);
-      toast.success(`已添加 ${info.name}，加载了 ${fetchedCommits.length} 个提交`);
+      toast.success(t('已添加仓库', { name: info.name, count: fetchedCommits.length }));
     } catch (error) {
-      toast.error(`打开仓库失败：${error instanceof Error ? error.message : '未知错误'}`);
+      toast.error(t('打开仓库失败', { error: error instanceof Error ? error.message : t('未知错误') }));
     }
   };
 
@@ -55,18 +57,18 @@ export function Dashboard() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview and quick actions</p>
+          <h1 className="text-3xl font-bold">{t('仪表盘')}</h1>
+          <p className="text-muted-foreground">{t('概览和快捷操作')}</p>
         </div>
         {repoInfo && (
           <div className="flex gap-2">
             <Button onClick={() => navigate('/commits')}>
               <GitCommit className="w-4 h-4 mr-2" />
-              View Commits
+              {t('查看提交')}
             </Button>
             <Button variant="outline" onClick={() => navigate('/reports/new')}>
               <FileText className="w-4 h-4 mr-2" />
-              Generate Report
+              {t('生成报告按钮')}
             </Button>
           </div>
         )}
@@ -74,84 +76,84 @@ export function Dashboard() {
 
       {activeRepos.size === 0 ? (
         <EmptyState
-          title="No Repository Selected"
-          description="Open a repository to get started"
-          action={{ label: "Open Repository", onClick: handleOpenRepo }}
+          title={t('未选择仓库标题')}
+          description={t('未选择仓库描述')}
+          action={{ label: t('打开仓库'), onClick: handleOpenRepo }}
         />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
-                <CardDescription>Total Commits</CardDescription>
+                <CardDescription>{t('总提交数')}</CardDescription>
                 <CardTitle className="text-3xl font-semibold tabular-nums">{commits.length}</CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <GitCommit className="w-3 h-3 mr-1" />
-                    All Time
+                    {t('全部时间')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="flex gap-2 font-medium">
-                  Repository activity <TrendingUp className="w-4 h-4" />
+                  {t('仓库活动')} <TrendingUp className="w-4 h-4" />
                 </div>
-                <div className="text-muted-foreground">Total commit history</div>
+                <div className="text-muted-foreground">{t('总提交历史')}</div>
               </CardFooter>
             </Card>
 
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
-                <CardDescription>Contributors</CardDescription>
+                <CardDescription>{t('贡献者')}</CardDescription>
                 <CardTitle className="text-3xl font-semibold tabular-nums">{uniqueAuthors}</CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <Users className="w-3 h-3 mr-1" />
-                    Active
+                    {t('活跃')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="flex gap-2 font-medium">
-                  Team collaboration <Users className="w-4 h-4" />
+                  {t('团队协作')} <Users className="w-4 h-4" />
                 </div>
-                <div className="text-muted-foreground">Unique contributors</div>
+                <div className="text-muted-foreground">{t('唯一贡献者')}</div>
               </CardFooter>
             </Card>
 
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
-                <CardDescription>Recent Activity</CardDescription>
+                <CardDescription>{t('最近活动')}</CardDescription>
                 <CardTitle className="text-3xl font-semibold tabular-nums">{last7Days}</CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <Calendar className="w-3 h-3 mr-1" />
-                    7 Days
+                    {t('7天')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="flex gap-2 font-medium">
-                  Last week commits <TrendingUp className="w-4 h-4" />
+                  {t('最近一周提交')} <TrendingUp className="w-4 h-4" />
                 </div>
-                <div className="text-muted-foreground">Recent development pace</div>
+                <div className="text-muted-foreground">{t('最近开发速度')}</div>
               </CardFooter>
             </Card>
 
             <Card className="relative bg-gradient-to-t from-primary/5 to-card shadow-sm">
               <CardHeader>
-                <CardDescription>Repository</CardDescription>
+                <CardDescription>{t('仓库')}</CardDescription>
                 <CardTitle className="text-xl font-semibold truncate">{repoInfo?.name}</CardTitle>
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline">
                     <FolderOpen className="w-3 h-3 mr-1" />
-                    激活
+                    {t('激活')}
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="flex gap-2 font-medium">
-                  Current workspace <FolderOpen className="w-4 h-4" />
+                  {t('当前工作空间')} <FolderOpen className="w-4 h-4" />
                 </div>
                 <div className="text-muted-foreground truncate w-full">{repoInfo?.path}</div>
               </CardFooter>

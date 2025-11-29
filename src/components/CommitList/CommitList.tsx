@@ -82,11 +82,10 @@ const CommitList = ({
   onSearchChange,
   dateRange,
   onDateRangeChange,
-  repoFilter = 'all',
   onRepoFilterChange,
 }: CommitListProps) => {
   const navigate = useNavigate();
-  const { selectedCommits, toggleCommit, repoInfo, commitDiffs, loadingDiffs, loadCommitDiff, activeRepos, currentRepoId } =
+  const { selectedCommits, toggleCommit, commitDiffs, loadingDiffs, loadCommitDiff, activeRepos, currentRepoId } =
     useRepoStore();
   const { setReport, isGenerating, setGenerating } = useReportStore();
   const [dialogOpen, setDialogOpen] = useState(false);

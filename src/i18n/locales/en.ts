@@ -36,6 +36,7 @@ export default {
   "打开仓库": "Open Repository",
   "选择仓库": "Select Repository",
   "正在打开仓库": "Opening repository...",
+  "正在打开仓库名": "Opening: {{name}}...",
   "已添加仓库": "Added {{name}}, loaded {{count}} commits",
   "打开仓库失败": "Failed to open repository: {{error}}",
   "未找到仓库": "Repository not found",
@@ -95,4 +96,5 @@ export default {
   "加载失败": "Failed to load",
   "操作成功": "Operation successful",
   "操作失败": "Operation failed",
+  "未知错误": "Unknown error",
 };
