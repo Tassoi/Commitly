@@ -35,7 +35,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -61,7 +60,6 @@ import {
   X,
   FileText,
   Calendar,
-  Clock,
   FolderGit2,
   User,
 } from 'lucide-react';

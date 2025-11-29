@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { FolderGit2, FolderOpen, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import type { RepoInfo, Commit, RepoHistoryItem } from '@/types';
+import type { RepoHistoryItem } from '@/types';
 import { useTranslation } from 'react-i18next';
 
 export function TopBar() {

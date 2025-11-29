@@ -51,5 +51,6 @@ jobs:
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
-          draft: true
+          draft: false
+          prerelease: false
           generate_release_notes: true

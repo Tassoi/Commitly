@@ -15,7 +15,7 @@ pub struct LLMService {
 impl LLMService {
     pub fn new(provider: LLMProvider, proxy_config: Option<ProxyConfig>) -> Self {
         let mut client_builder = Client::builder()
-            .timeout(std::time::Duration::from_secs(90)); // 90秒：足够处理50个提交，又不会让用户觉得卡死
+            .timeout(std::time::Duration::from_secs(90)); //
 
         // M5: Apply proxy configuration if provided
         if let Some(proxy_cfg) = proxy_config {

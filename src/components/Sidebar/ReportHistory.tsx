@@ -30,7 +30,6 @@ const ReportHistory = () => {
     updateReportName,
     updateReportContent,
   } = useReportStore();
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
@@ -38,11 +37,6 @@ const ReportHistory = () => {
 
   const handleReportClick = (reportId: string) => {
     switchToReport(reportId);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, reportId: string) => {
-    e.stopPropagation();
-    removeReportFromHistory(reportId);
   };
 
   const formatDate = (timestamp: number) => {
@@ -85,7 +79,7 @@ const ReportHistory = () => {
         <div className="space-y-1 p-2">
           {reportHistory.map((report) => {
             const isActive = report.id === currentReportId;
-            const isHovered = report.id === hoveredId;
+     
 
             return (
               <ContextMenu key={report.id}>
@@ -96,8 +90,6 @@ const ReportHistory = () => {
                       isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
                     )}
                     onClick={() => handleReportClick(report.id)}
-                    onMouseEnter={() => setHoveredId(report.id)}
-                    onMouseLeave={() => setHoveredId(null)}
                   >
                     <FileText
                       className={cn('h-4 w-4 shrink-0 mt-0.5', isActive && 'text-primary')}

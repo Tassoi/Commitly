@@ -9,7 +9,7 @@ import { useGitRepo } from './hooks/useGitRepo';
 function App() {
   useTheme();
   const { persistedActiveRepos, addActiveRepo } = useRepoStore();
-  const { openRepository, getCommits } = useGitRepo();
+  const { getCommits } = useGitRepo();
 
   useEffect(() => {
     const restoreActiveRepos = async () => {
