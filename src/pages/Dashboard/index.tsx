@@ -68,10 +68,6 @@ export function Dashboard() {
               <GitCommit className="w-4 h-4 mr-2" />
               {t('查看提交')}
             </Button>
-            <Button variant="outline" onClick={() => navigate('/reports/new')}>
-              <FileText className="w-4 h-4 mr-2" />
-              {t('生成报告按钮')}
-            </Button>
           </div>
         )}
       </div>
