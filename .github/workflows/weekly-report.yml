@@ -44,11 +44,22 @@ jobs:
         run: npm ci
       - name: Generate weekly report
         env:
-          RANGE_FROM: ${{ inputs.range_from }}
-          RANGE_TO: ${{ inputs.range_to }}
           REPORT_FILE: artifacts/report-weekly.md
           CONFIG_FILE: config.cli.json
         run: |
+          # 设置默认日期：当天为结束日期，前一周为开始日期
+          if [ -z "${{ inputs.range_to }}" ]; then
+            RANGE_TO=$(date +%Y-%m-%d)
+          else
+            RANGE_TO="${{ inputs.range_to }}"
+          fi
+          if [ -z "${{ inputs.range_from }}" ]; then
+            RANGE_FROM=$(date -d "$RANGE_TO - 7 days" +%Y-%m-%d 2>/dev/null || date -v-7d -j -f "%Y-%m-%d" "$RANGE_TO" +%Y-%m-%d)
+          else
+            RANGE_FROM="${{ inputs.range_from }}"
+          fi
+          export RANGE_FROM RANGE_TO
+          echo "日期范围: $RANGE_FROM 至 $RANGE_TO"
           chmod +x scripts/generate-weekly-report.sh
           scripts/generate-weekly-report.sh
       - name: Push to Feishu
