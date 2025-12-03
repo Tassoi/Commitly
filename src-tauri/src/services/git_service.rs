@@ -27,24 +27,28 @@ impl GitService {
 
     /// 获取仓库信息
     pub fn get_repo_info(&self) -> Result<RepoInfo, String> {
-        let head = self.repository.head()
+        let head = self
+            .repository
+            .head()
             .map_err(|e| format!("Failed to get HEAD: {}", e))?;
 
-        let branch_name = head.shorthand()
-            .unwrap_or("unknown")
-            .to_string();
+        let branch_name = head.shorthand().unwrap_or("unknown").to_string();
 
-        let repo_name = self.repo_path
+        let repo_name = self
+            .repo_path
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
 
         // 统计提交总量
-        let mut revwalk = self.repository.revwalk()
+        let mut revwalk = self
+            .repository
+            .revwalk()
             .map_err(|e| format!("Failed to create revwalk: {}", e))?;
 
-        revwalk.push_head()
+        revwalk
+            .push_head()
             .map_err(|e| format!("Failed to push HEAD: {}", e))?;
 
         let total_commits = revwalk.count();
@@ -61,17 +65,22 @@ impl GitService {
     /// from：Unix 时间戳（秒）
     /// to：Unix 时间戳（秒）
     pub fn get_commits(&self, from: i64, to: i64) -> Result<Vec<Commit>, String> {
-        let mut revwalk = self.repository.revwalk()
+        let mut revwalk = self
+            .repository
+            .revwalk()
             .map_err(|e| format!("Failed to create revwalk: {}", e))?;
 
-        revwalk.push_head()
+        revwalk
+            .push_head()
             .map_err(|e| format!("Failed to push HEAD: {}", e))?;
 
         let mut commits = Vec::new();
 
         for oid_result in revwalk {
             let oid = oid_result.map_err(|e| format!("Failed to get OID: {}", e))?;
-            let commit = self.repository.find_commit(oid)
+            let commit = self
+                .repository
+                .find_commit(oid)
                 .map_err(|e| format!("Failed to find commit: {}", e))?;
 
             let commit_time = commit.time().seconds();
@@ -101,35 +110,40 @@ impl GitService {
 
     /// 获取指定提交的 diff
     pub fn get_commit_diff(&self, hash: &str) -> Result<String, String> {
-        let oid = git2::Oid::from_str(hash)
-            .map_err(|e| format!("Invalid commit hash: {}", e))?;
+        let oid = git2::Oid::from_str(hash).map_err(|e| format!("Invalid commit hash: {}", e))?;
 
-        let commit = self.repository.find_commit(oid)
+        let commit = self
+            .repository
+            .find_commit(oid)
             .map_err(|e| format!("Failed to find commit: {}", e))?;
 
         // 获取父提交（若存在）
         let parent = if commit.parent_count() > 0 {
-            Some(commit.parent(0)
-                .map_err(|e| format!("Failed to get parent: {}", e))?)
+            Some(
+                commit
+                    .parent(0)
+                    .map_err(|e| format!("Failed to get parent: {}", e))?,
+            )
         } else {
             None
         };
 
         // 获取树对象
-        let tree = commit.tree()
+        let tree = commit
+            .tree()
             .map_err(|e| format!("Failed to get commit tree: {}", e))?;
 
-        let parent_tree = parent.as_ref()
+        let parent_tree = parent
+            .as_ref()
             .map(|p| p.tree())
             .transpose()
             .map_err(|e| format!("Failed to get parent tree: {}", e))?;
 
         // 生成 diff
-        let diff = self.repository.diff_tree_to_tree(
-            parent_tree.as_ref(),
-            Some(&tree),
-            None,
-        ).map_err(|e| format!("Failed to create diff: {}", e))?;
+        let diff = self
+            .repository
+            .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), None)
+            .map_err(|e| format!("Failed to create diff: {}", e))?;
 
         // 将 diff 转为 patch 文本
         let mut diff_text = String::new();
@@ -161,7 +175,8 @@ impl GitService {
             }
 
             true
-        }).map_err(|e| format!("Failed to generate diff patch: {}", e))?;
+        })
+        .map_err(|e| format!("Failed to generate diff patch: {}", e))?;
 
         Ok(diff_text)
     }
@@ -227,35 +242,42 @@ impl GitService {
             let oid = git2::Oid::from_str(&commit.hash)
                 .map_err(|e| format!("Invalid commit hash: {}", e))?;
 
-            let git_commit = self.repository.find_commit(oid)
+            let git_commit = self
+                .repository
+                .find_commit(oid)
                 .map_err(|e| format!("Failed to find commit: {}", e))?;
 
             // 获取父提交（若存在）
             let parent = if git_commit.parent_count() > 0 {
-                Some(git_commit.parent(0)
-                    .map_err(|e| format!("Failed to get parent: {}", e))?)
+                Some(
+                    git_commit
+                        .parent(0)
+                        .map_err(|e| format!("Failed to get parent: {}", e))?,
+                )
             } else {
                 None
             };
 
             // 获取树对象
-            let tree = git_commit.tree()
+            let tree = git_commit
+                .tree()
                 .map_err(|e| format!("Failed to get commit tree: {}", e))?;
 
-            let parent_tree = parent.as_ref()
+            let parent_tree = parent
+                .as_ref()
                 .map(|p| p.tree())
                 .transpose()
                 .map_err(|e| format!("Failed to get parent tree: {}", e))?;
 
             // 计算 diff
-            let diff = self.repository.diff_tree_to_tree(
-                parent_tree.as_ref(),
-                Some(&tree),
-                None,
-            ).map_err(|e| format!("Failed to create diff: {}", e))?;
+            let diff = self
+                .repository
+                .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), None)
+                .map_err(|e| format!("Failed to create diff: {}", e))?;
 
             // 汇总统计数据
-            let stats = diff.stats()
+            let stats = diff
+                .stats()
                 .map_err(|e| format!("Failed to get diff stats: {}", e))?;
 
             files_changed += stats.files_changed();

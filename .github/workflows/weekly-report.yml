@@ -1,0 +1,65 @@
+name: Weekly Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      range_from:
+        description: '开始日期 (YYYY-MM-DD)'
+        required: false
+      range_to:
+        description: '结束日期 (YYYY-MM-DD)'
+        required: false
+  schedule:
+    - cron: '0 1 * * MON'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      # 在仓库 Settings -> Secrets and variables -> Actions -> Variables 配置
+      # 比如：TARGET_REPO="org/repo1 org/repo2"
+      TARGET_REPO: ${{ vars.TARGET_REPO }}
+    steps:
+      - name: Checkout automation repo
+        uses: actions/checkout@v4
+
+      - name: Clone target repos
+        if: ${{ env.TARGET_REPO != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p repos
+          REPO_PATHS=""
+          for repo in $TARGET_REPO; do
+            dir="repos/$(echo "$repo" | tr '/:' '-_')"
+            git clone "https://${GITHUB_TOKEN}@github.com/${repo}.git" "$dir" >/dev/null 2>&1
+            REPO_PATHS+="$(pwd)/$dir "
+          done
+          echo "REPO_PATHS=$REPO_PATHS" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate weekly report
+        env:
+          RANGE_FROM: ${{ inputs.range_from }}
+          RANGE_TO: ${{ inputs.range_to }}
+          REPORT_FILE: artifacts/report-weekly.md
+          CONFIG_FILE: config.cli.json
+        run: |
+          chmod +x scripts/generate-weekly-report.sh
+          scripts/generate-weekly-report.sh
+      - name: Push to Feishu
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+          REPORT_FILE: artifacts/report-weekly.md
+          REPORT_TITLE: '自动周报'
+          REPORT_SUMMARY: ''
+        run: node scripts/push-feishu.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report
+          path: artifacts/report-weekly.md

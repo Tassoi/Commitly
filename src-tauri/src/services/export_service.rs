@@ -28,8 +28,14 @@ impl ExportService {
         let mut content = String::new();
 
         // 元信息头
-        content.push_str(&format!("# {}\n\n", report_type_to_chinese(&report.report_type)));
-        content.push_str(&format!("> **生成时间**: {}\n", format_timestamp(report.generated_at)));
+        content.push_str(&format!(
+            "# {}\n\n",
+            report_type_to_chinese(&report.report_type)
+        ));
+        content.push_str(&format!(
+            "> **生成时间**: {}\n",
+            format_timestamp(report.generated_at)
+        ));
         content.push_str(&format!("> **提交数量**: {}\n", report.commits.len()));
         content.push_str(&format!("> **报告 ID**: {}\n\n", report.id));
         content.push_str("---\n\n");
@@ -92,7 +98,6 @@ impl ExportService {
         println!("✅ HTML report exported to: {}", save_path);
         Ok(())
     }
-
 }
 
 /// 将 Unix 时间戳格式化成人类可读日期
@@ -341,13 +346,13 @@ fn build_html_document(report: &Report, html_content: &str) -> String {
     </div>
 </body>
 </html>"#,
-        report_type_to_chinese(&report.report_type),           // 占位 1：标题
-        format_timestamp(report.generated_at),                // 占位 2：副标题时间
-        report_type_to_chinese(&report.report_type),           // 徽章文案
-        report_type_to_chinese(&report.report_type),           // 一级标题文案
-        format_timestamp(report.generated_at),                // 元信息：生成时间
-        report.commits.len(),                                 // 元信息：提交数量
-        report.id,                                            // 元信息：报告 ID
-        html_content                                          // 主体内容
+        report_type_to_chinese(&report.report_type), // 占位 1：标题
+        format_timestamp(report.generated_at),       // 占位 2：副标题时间
+        report_type_to_chinese(&report.report_type), // 徽章文案
+        report_type_to_chinese(&report.report_type), // 一级标题文案
+        format_timestamp(report.generated_at),       // 元信息：生成时间
+        report.commits.len(),                        // 元信息：提交数量
+        report.id,                                   // 元信息：报告 ID
+        html_content                                 // 主体内容
     )
 }

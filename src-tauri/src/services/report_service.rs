@@ -1,7 +1,6 @@
 // 报告服务：用 Handlebars 模板编排报告生成流程
 
-use crate::commands::report::RepoGroup;
-use crate::models::{Commit, Report, ReportType, TemplateType};
+use crate::models::{Commit, RepoGroup, Report, ReportType, TemplateType};
 use crate::services::{llm_service::LLMService, template_service::TemplateService};
 use handlebars::Handlebars;
 use serde_json::json;
@@ -37,17 +36,14 @@ impl ReportService {
         &self,
         repo_groups: Vec<RepoGroup>,
         template_id: Option<String>,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<Report, String> {
         if repo_groups.is_empty() {
             return Err("No repositories provided for report generation".to_string());
         }
 
         // 展平所有提交用于统计
-        let all_commits: Vec<Commit> = repo_groups
-            .iter()
-            .flat_map(|g| g.commits.clone())
-            .collect();
+        let all_commits: Vec<Commit> = repo_groups.iter().flat_map(|g| g.commits.clone()).collect();
 
         if all_commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
@@ -78,11 +74,17 @@ impl ReportService {
 
         // 读取模板内容
         let template_content = if let Some(tid) = template_id {
-            let template = TemplateService::get_template(&app, &tid)?;
+            let app_handle = app
+                .as_ref()
+                .ok_or_else(|| "自定义模板仅在应用内可用".to_string())?;
+            let template = TemplateService::get_template(app_handle, &tid)?;
             template.content
         } else {
             // 使用默认周报模板
-            let default_template = TemplateService::get_default_template(&app, TemplateType::Weekly)?;
+            let default_template = TemplateService::get_default_template_with_fallback(
+                app.as_ref(),
+                TemplateType::Weekly,
+            )?;
             default_template.content
         };
 
@@ -94,7 +96,7 @@ impl ReportService {
 
         let content = self
             .llm_service
-            .generate_report_streaming(prompt, app)
+            .generate_report_streaming(prompt, app.clone())
             .await?;
 
         Ok(Report {
@@ -111,17 +113,14 @@ impl ReportService {
         &self,
         repo_groups: Vec<RepoGroup>,
         template_id: Option<String>,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<Report, String> {
         if repo_groups.is_empty() {
             return Err("No repositories provided for report generation".to_string());
         }
 
         // 展平所有提交用于统计
-        let all_commits: Vec<Commit> = repo_groups
-            .iter()
-            .flat_map(|g| g.commits.clone())
-            .collect();
+        let all_commits: Vec<Commit> = repo_groups.iter().flat_map(|g| g.commits.clone()).collect();
 
         if all_commits.is_empty() {
             return Err("No commits provided for report generation".to_string());
@@ -155,11 +154,17 @@ impl ReportService {
 
         // 读取模板内容
         let template_content = if let Some(tid) = template_id {
-            let template = TemplateService::get_template(&app, &tid)?;
+            let app_handle = app
+                .as_ref()
+                .ok_or_else(|| "自定义模板仅在应用内可用".to_string())?;
+            let template = TemplateService::get_template(app_handle, &tid)?;
             template.content
         } else {
             // 使用默认月报模板
-            let default_template = TemplateService::get_default_template(&app, TemplateType::Monthly)?;
+            let default_template = TemplateService::get_default_template_with_fallback(
+                app.as_ref(),
+                TemplateType::Monthly,
+            )?;
             default_template.content
         };
 
@@ -171,7 +176,7 @@ impl ReportService {
 
         let content = self
             .llm_service
-            .generate_report_streaming(prompt, app)
+            .generate_report_streaming(prompt, app.clone())
             .await?;
 
         Ok(Report {
@@ -201,19 +206,15 @@ impl ReportService {
             std::collections::HashMap::new();
 
         for commit in commits {
-            let dt = DateTime::<Utc>::from_timestamp(commit.timestamp, 0)
-                .unwrap_or_else(|| Utc::now());
+            let dt =
+                DateTime::<Utc>::from_timestamp(commit.timestamp, 0).unwrap_or_else(|| Utc::now());
             let year = dt.year();
             let week = dt.iso_week().week();
             weeks.entry((year, week)).or_default().push(commit);
         }
 
         let mut result: Vec<_> = weeks.into_values().collect();
-        result.sort_by_key(|week| {
-            week.first()
-                .map(|c| c.timestamp)
-                .unwrap_or(0)
-        });
+        result.sort_by_key(|week| week.first().map(|c| c.timestamp).unwrap_or(0));
         result
     }
 }

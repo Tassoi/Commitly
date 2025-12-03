@@ -1,7 +1,6 @@
 // 模板服务：负责管理报告模板
 
 use crate::models::{ReportTemplate, TemplateType};
-use std::collections::HashMap;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 
@@ -15,8 +14,8 @@ impl TemplateService {
         let mut templates = Vec::new();
 
         // 添加内置模板
-        templates.push(Self::get_builtin_weekly());
-        templates.push(Self::get_builtin_monthly());
+        templates.push(Self::builtin_weekly_template());
+        templates.push(Self::builtin_monthly_template());
 
         // 从存储中加载自定义模板
         let custom_templates = Self::load_custom_templates(app)?;
@@ -32,10 +31,10 @@ impl TemplateService {
     pub fn get_template(app: &AppHandle, id: &str) -> Result<ReportTemplate, String> {
         // 先检查内置模板
         if id == "builtin-weekly" {
-            return Ok(Self::get_builtin_weekly());
+            return Ok(Self::builtin_weekly_template());
         }
         if id == "builtin-monthly" {
-            return Ok(Self::get_builtin_monthly());
+            return Ok(Self::builtin_monthly_template());
         }
 
         // 在自定义模板中查找
@@ -71,7 +70,7 @@ impl TemplateService {
         id: String,
         name: Option<String>,
         content: Option<String>,
-) -> Result<ReportTemplate, String> {
+    ) -> Result<ReportTemplate, String> {
         // 禁止修改内置模板
         if id.starts_with("builtin-") {
             return Err("Cannot update built-in templates".to_string());
@@ -187,16 +186,30 @@ impl TemplateService {
 
         // 否则退回内置模板
         match template_type {
-            TemplateType::Weekly => Ok(Self::get_builtin_weekly()),
-            TemplateType::Monthly => Ok(Self::get_builtin_monthly()),
-            TemplateType::Custom => {
-                Err("No default template found for custom type".to_string())
-            }
+            TemplateType::Weekly => Ok(Self::builtin_weekly_template()),
+            TemplateType::Monthly => Ok(Self::builtin_monthly_template()),
+            TemplateType::Custom => Err("No default template found for custom type".to_string()),
+        }
+    }
+
+    /// 在缺少 AppHandle 时退回到内置模板
+    pub fn get_default_template_with_fallback(
+        app: Option<&AppHandle>,
+        template_type: TemplateType,
+    ) -> Result<ReportTemplate, String> {
+        if let Some(handle) = app {
+            return Self::get_default_template(handle, template_type);
+        }
+
+        match template_type {
+            TemplateType::Weekly => Ok(Self::builtin_weekly_template()),
+            TemplateType::Monthly => Ok(Self::builtin_monthly_template()),
+            TemplateType::Custom => Err("CLI 模式暂不支持自定义模板".to_string()),
         }
     }
 
     /// 获取内置周报模板
-    fn get_builtin_weekly() -> ReportTemplate {
+    pub fn builtin_weekly_template() -> ReportTemplate {
         ReportTemplate::new_builtin(
             "builtin-weekly".to_string(),
             "默认周报模板".to_string(),
@@ -206,7 +219,7 @@ impl TemplateService {
     }
 
     /// 获取内置月报模板
-    fn get_builtin_monthly() -> ReportTemplate {
+    pub fn builtin_monthly_template() -> ReportTemplate {
         ReportTemplate::new_builtin(
             "builtin-monthly".to_string(),
             "默认月报模板".to_string(),
@@ -222,19 +235,14 @@ impl TemplateService {
             .map_err(|e| format!("Failed to access store: {}", e))?;
 
         match store.get(TEMPLATES_STORE_KEY) {
-            Some(value) => {
-                serde_json::from_value(value.clone())
-                    .map_err(|e| format!("Failed to deserialize templates: {}", e))
-            }
+            Some(value) => serde_json::from_value(value.clone())
+                .map_err(|e| format!("Failed to deserialize templates: {}", e)),
             None => Ok(Vec::new()),
         }
     }
 
     /// 将自定义模板保存到 tauri-plugin-store
-    fn save_custom_templates(
-        app: &AppHandle,
-        templates: &[ReportTemplate],
-    ) -> Result<(), String> {
+    fn save_custom_templates(app: &AppHandle, templates: &[ReportTemplate]) -> Result<(), String> {
         let store = app
             .store("templates.json")
             .map_err(|e| format!("Failed to access store: {}", e))?;

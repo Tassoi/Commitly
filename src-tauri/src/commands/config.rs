@@ -30,7 +30,8 @@ pub async fn test_proxy(proxy_url: Option<String>) -> Result<String, String> {
         client_builder.proxy(proxy).build()
     } else {
         client_builder.build()
-    }.map_err(|e| format!("Failed to create client: {}", e))?;
+    }
+    .map_err(|e| format!("Failed to create client: {}", e))?;
 
     let response = client
         .get("https://www.google.com")

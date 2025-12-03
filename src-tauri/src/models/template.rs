@@ -59,7 +59,12 @@ impl ReportTemplate {
     }
 
     /// 创建内置模板（用于周报/月报默认模板）
-    pub fn new_builtin(id: String, name: String, template_type: TemplateType, content: String) -> Self {
+    pub fn new_builtin(
+        id: String,
+        name: String,
+        template_type: TemplateType,
+        content: String,
+    ) -> Self {
         let now = chrono::Utc::now().timestamp();
         Self {
             id,

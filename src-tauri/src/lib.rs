@@ -1,7 +1,7 @@
 // 模块定义
-mod commands;
-mod models;
-mod services;
+pub mod commands;
+pub mod models;
+pub mod services;
 mod utils;
 
 // 重导出命令以便注册

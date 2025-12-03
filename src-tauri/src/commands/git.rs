@@ -1,7 +1,7 @@
 // Git 相关 Tauri 命令
 
 use crate::models::{Commit, RepoInfo, RepoStats};
-use crate::services::{GitService, cache_service};
+use crate::services::{cache_service, GitService};
 
 #[tauri::command]
 pub async fn open_repository(path: String) -> Result<RepoInfo, String> {

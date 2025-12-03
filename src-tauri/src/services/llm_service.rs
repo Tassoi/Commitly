@@ -14,8 +14,7 @@ pub struct LLMService {
 
 impl LLMService {
     pub fn new(provider: LLMProvider, proxy_config: Option<ProxyConfig>) -> Self {
-        let mut client_builder = Client::builder()
-            .timeout(std::time::Duration::from_secs(90)); // 设置 90 秒超时
+        let mut client_builder = Client::builder().timeout(std::time::Duration::from_secs(90)); // 设置 90 秒超时
 
         // M5：如有代理配置则套用
         if let Some(proxy_cfg) = proxy_config {
@@ -40,7 +39,7 @@ impl LLMService {
     pub async fn generate_report_streaming(
         &self,
         prompt: String,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<String, String> {
         self.generate_report_streaming_with_template(prompt, "default".to_string(), app)
             .await
@@ -51,7 +50,7 @@ impl LLMService {
         &self,
         prompt: String,
         _template_id: String,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<String, String> {
         let content = match &self.provider {
             LLMProvider::OpenAI {
@@ -89,7 +88,7 @@ impl LLMService {
         api_key: &str,
         model: &str,
         prompt: String,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<String, String> {
         let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
         let body = json!({
@@ -98,7 +97,6 @@ impl LLMService {
             "temperature": 0.7,
             "stream": true
         });
-
 
         let response = self
             .client
@@ -144,7 +142,9 @@ impl LLMService {
                                 full_content.push_str(content);
 
                                 // 发送进度事件
-                                let _ = app.emit("report-generation-progress", content);
+                                if let Some(handle) = &app {
+                                    let _ = handle.emit("report-generation-progress", content);
+                                }
                             }
                         }
                     }
@@ -166,7 +166,7 @@ impl LLMService {
         api_key: &str,
         model: &str,
         prompt: String,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<String, String> {
         let url = format!("{}/v1/messages", base_url.trim_end_matches('/'));
         let body = json!({
@@ -217,7 +217,9 @@ impl LLMService {
                             if data["type"] == "content_block_delta" {
                                 if let Some(text) = data["delta"]["text"].as_str() {
                                     full_content.push_str(text);
-                                    let _ = app.emit("report-generation-progress", text);
+                                    if let Some(handle) = &app {
+                                        let _ = handle.emit("report-generation-progress", text);
+                                    }
                                 }
                             }
                         }
@@ -240,7 +242,7 @@ impl LLMService {
         api_key: &str,
         model: &str,
         prompt: String,
-        app: AppHandle,
+        app: Option<AppHandle>,
     ) -> Result<String, String> {
         // Gemini 使用 {base_url}/models/{model}:streamGenerateContent?key={api_key} URL 结构
         let url = format!(
@@ -300,7 +302,9 @@ impl LLMService {
                                 for part in parts {
                                     if let Some(text) = part["text"].as_str() {
                                         full_content.push_str(text);
-                                        let _ = app.emit("report-generation-progress", text);
+                                        if let Some(handle) = &app {
+                                            let _ = handle.emit("report-generation-progress", text);
+                                        }
                                     }
                                 }
                             }

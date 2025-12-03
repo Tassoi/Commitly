@@ -11,7 +11,10 @@ pub async fn export_report(
     save_path: String,
 ) -> Result<String, String> {
     println!("📤 Exporting report: format={}, path={}", format, save_path);
-    println!("   Report ID: {}, Type: {:?}", report.id, report.report_type);
+    println!(
+        "   Report ID: {}, Type: {:?}",
+        report.id, report.report_type
+    );
     println!("   Commits: {}", report.commits.len());
 
     match format.as_str() {
@@ -23,7 +26,10 @@ pub async fn export_report(
             ExportService::export_html(&report, &save_path)?;
             Ok(format!("成功导出 HTML 文件到: {}", save_path))
         }
-        _ => Err(format!("不支持的导出格式: {}（支持的格式：markdown, html）", format)),
+        _ => Err(format!(
+            "不支持的导出格式: {}（支持的格式：markdown, html）",
+            format
+        )),
     }
 }
 
