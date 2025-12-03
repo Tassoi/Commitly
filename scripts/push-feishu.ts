@@ -20,7 +20,6 @@ interface PushOptions {
   appSecret: string;
   userId: string;
   title: string;
-  summary: string;
   reportPath: string;
 }
 
@@ -55,25 +54,8 @@ async function getTenantAccessToken(appId: string, appSecret: string): Promise<s
   return data.tenant_access_token;
 }
 
-// 构建富文本消息内容
-function buildPostContent(title: string, reportContent: string) {
-  const lines = reportContent.split('\n');
-  const content: Array<Array<{ tag: string; text?: string; href?: string }>> = lines.map((line) => [
-    { tag: 'text', text: line },
-  ]);
-
-  return {
-    zh_cn: {
-      title,
-      content,
-    },
-  };
-}
-
-// 发送消息到个人
-async function sendMessage(token: string, userId: string, title: string, reportContent: string): Promise<void> {
-  const postContent = buildPostContent(title, reportContent);
-
+// 发送文本消息到个人
+async function sendMessage(token: string, userId: string, content: string): Promise<void> {
   const response = await fetch(`https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id`, {
     method: 'POST',
     headers: {
@@ -82,8 +64,8 @@ async function sendMessage(token: string, userId: string, title: string, reportC
     },
     body: JSON.stringify({
       receive_id: userId,
-      msg_type: 'post',
-      content: JSON.stringify({ post: postContent }),
+      msg_type: 'text',
+      content: JSON.stringify({ text: content }),
     }),
   });
 
@@ -105,11 +87,11 @@ async function pushToFeishu(options: PushOptions) {
 
   // 2. 读取周报内容
   const reportContent = await readFileSafe(options.reportPath);
-  const content = options.summary || reportContent;
+  const content = options.title ? `${options.title}\n\n${reportContent}` : reportContent;
 
   // 3. 发送消息
   console.log('正在发送消息到飞书...');
-  await sendMessage(token, options.userId, options.title, content);
+  await sendMessage(token, options.userId, content);
 
   console.log('✅ 飞书推送成功');
 }
@@ -130,15 +112,13 @@ async function main() {
   }
 
   const reportPath = process.env.REPORT_FILE ?? 'dist/report-weekly.md';
-  const title = process.env.REPORT_TITLE ?? '自动化周报';
-  const summary = process.env.REPORT_SUMMARY ?? '';
+  const title = process.env.REPORT_TITLE ?? '';
 
   await pushToFeishu({
     appId,
     appSecret,
     userId,
     title,
-    summary,
     reportPath,
   });
 }
