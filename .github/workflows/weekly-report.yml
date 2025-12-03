@@ -10,7 +10,7 @@ on:
         description: '结束日期 (YYYY-MM-DD)'
         required: false
   schedule:
-    - cron: '0 1 * * MON'
+    - cron: '0 1 * * FRI'  # 每周五 09:00 北京时间
 
 jobs:
   generate:
