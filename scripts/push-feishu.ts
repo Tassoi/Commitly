@@ -30,7 +30,7 @@ async function readFileSafe(path: string): Promise<string> {
 }
 
 function buildFeishuPayload(options: PushOptions, reportSnippet: string): FeishuPayload {
-  const lines = reportSnippet.split('\n').slice(0, 20); // 控制消息长度
+  const lines = reportSnippet.split('\n');
   const content: FeishuPayload['content']['post']['zh_cn']['content'] = lines.map((line) => [
     { tag: 'text', text: line },
   ]);
@@ -57,7 +57,7 @@ function signRequest(secret: string, timestamp: number): string {
 
 async function pushToFeishu(options: PushOptions) {
   const reportContent = await readFileSafe(options.reportPath);
-  const snippet = options.summary || reportContent.slice(0, 600);
+  const snippet = options.summary || reportContent;
   const payload = buildFeishuPayload(options, snippet);
 
   const timestamp = Math.floor(Date.now() / 1000);
