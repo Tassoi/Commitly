@@ -29,7 +29,11 @@ export function UpdateDialog() {
 
   useEffect(() => {
     checkForUpdates();
-  }, []);
+    
+    // 每 30 分钟检查一次更新
+    const interval = setInterval(checkForUpdates, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [checkForUpdates]);
 
   const progressPercent = progress && progress.total > 0 
     ? Math.round((progress.downloaded / progress.total) * 100) 
